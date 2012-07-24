@@ -51,14 +51,20 @@ void onUnfocusGUI(int id)
 void onKeyGUI(int id, GUI_MSG *msg)
 {
     printf("%s(%d)\n", __FUNCTION__, msg->gbsmsg->submess);
+    char cc[128];
+    ShowMSG(1, (int)"кн наж");
+    sprintf(cc, "sub: %x", msg->gbsmsg->submess);
+    ShowMSG(1, (int)cc);
+    sprintf(cc, "msg: %x", msg->gbsmsg->msg);
+    ShowMSG(1, (int)cc);
 
     if ((msg->gbsmsg->msg == KEY_DOWN || msg->gbsmsg->msg == LONG_PRESS))
     {
         switch(msg->gbsmsg->submess)
         {
-            case RIGHT_SOFT:
-                guiClose(id);
-                return;
+        case RIGHT_SOFT:
+            guiClose(id);
+            return;
         }
     }
 }

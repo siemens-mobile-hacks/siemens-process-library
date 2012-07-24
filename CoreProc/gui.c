@@ -11,9 +11,10 @@ typedef struct {
 
     int id;
     int cg_id; // Id of csm, not of CoreCSM
-    int used;
+    char used, close_emited;
     int pid;
     int dt_id;
+    void *userdata;
 
     void (*onRedraw)(int );
     void (*onCreate)(int );
@@ -280,6 +281,8 @@ int guiCreate(RECT *canvas,
     data->onUnfocus = onUnfocus;
     data->onKey = onKey;
     data->id = id;
+    data->close_emited = 0;
+    data->userdata = userdata;
 
     data->cg_id = CreateGUI(data);
     if(data->cg_id < 0) {
@@ -301,8 +304,14 @@ int guiClose(int id)
     if(!data)
         return -1;
 
+    if(!data->used || data->close_emited)
+        return -2;
+
+    data->close_emited = 1;
+
     if(data->cg_id > -1)
-        GBS_SendMessage(MMI_CEPID, KEY_DOWN, id, 0xFFFFDEAD);
+        //GBS_SendMessage(MMI_CEPID, KEY_DOWN, id, 0xFFFFDEAD);
+        GeneralFunc_flag0(data->cg_id, 0);
 
     eraseProcessDtor(data->pid, data->dt_id);
     return 0;
