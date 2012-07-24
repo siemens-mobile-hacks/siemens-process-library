@@ -1,1 +1,71 @@
 * text=auto !eol
+CoreProc/_start.c -text
+CoreProc/async_print.c -text
+CoreProc/async_print.h -text
+CoreProc/corearray.c -text
+CoreProc/corearray.h -text
+CoreProc/coreevent.h -text
+CoreProc/corelist.c -text
+CoreProc/corelist.h -text
+CoreProc/csm.c -text
+CoreProc/csm.h -text
+CoreProc/elf.cbp -text svneol=unset#application/xml
+CoreProc/exc_handler.c -text
+CoreProc/exc_handler.h -text
+CoreProc/exc_vectors.s -text
+CoreProc/gbs_tweak.c -text
+CoreProc/gbs_tweak.h -text
+CoreProc/gui.c -text
+CoreProc/gui.h -text
+CoreProc/lcd_primitives.c -text
+CoreProc/lcd_primitives.h -text
+CoreProc/main.c -text
+CoreProc/memctl.c -text
+CoreProc/memctl.h -text
+CoreProc/mutex.c -text
+CoreProc/mutex.h -text
+CoreProc/process.c -text
+CoreProc/process.h -text
+CoreProc/processbridge.c -text
+CoreProc/processbridge.h -text
+CoreProc/resctl.c -text
+CoreProc/resctl.h -text
+CoreProc/system.s -text
+CoreProc/task.c -text
+CoreProc/task.h -text
+CoreProc/thread.c -text
+CoreProc/thread.h -text
+CoreProc/timer.c -text
+CoreProc/timer.h -text
+CoreProc/waitcondition.c -text
+CoreProc/waitcondition.h -text
+libnucrt/__cxa_atexit.cpp -text
+libnucrt/crt_helper/__cxa_atexit.cpp -text
+libnucrt/crt_helper/crt_helper.cbp -text svneol=unset#application/xml
+libnucrt/crt_helper/dump.S -text
+libnucrt/crt_helper/main.c -text
+libnucrt/crt_helper/switab.c -text
+libnucrt/libcrt.cbp -text svneol=unset#application/xml
+libnucrt/main.c -text
+tests/csm/elf.cbp -text svneol=unset#application/xml
+tests/csm/main.c -text
+tests/gui/elf.cbp -text svneol=unset#application/xml
+tests/gui/main.c -text
+tests/layer_tests/bcopy64.S -text
+tests/layer_tests/elf.cbp -text svneol=unset#application/xml
+tests/layer_tests/main.c -text
+tests/layer_tests/memset64.S -text
+tests/layer_tests/text.c -text
+tests/mutexes/elf.cbp -text svneol=unset#application/xml
+tests/mutexes/main.c -text
+tests/proc/elf.cbp -text svneol=unset#application/xml
+tests/proc/main.c -text
+tests/socket/elf.cbp -text svneol=unset#application/xml
+tests/socket/main.c -text
+tests/socket/main.c.zip -text svneol=unset#application/zip
+tests/socket/socket.c -text
+tests/socket/socket.h -text
+tests/thread/elf.cbp -text svneol=unset#application/xml
+tests/thread/main.c -text
+tests/timer/elf.cbp -text svneol=unset#application/xml
+tests/timer/main.c -text
