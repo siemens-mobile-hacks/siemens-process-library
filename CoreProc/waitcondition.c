@@ -113,6 +113,7 @@ int wakeOneWaitCond(int wid)
 
     if(wc->waiters < 1) {
         wc->waiters--;
+        printf("wakeOneWaitCond: waiters < 1\n");
         return 0;
     }
 

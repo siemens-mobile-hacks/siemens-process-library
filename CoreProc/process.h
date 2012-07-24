@@ -7,6 +7,13 @@
 #include "corelist.h"
 #include "resctl.h"
 
+typedef struct
+{
+    int prio;
+    int stack_size;
+    void *stack;
+    char is_stack_freeable;
+}ProcessConf;
 
 typedef struct
 {
@@ -44,7 +51,9 @@ typedef struct
 
 CoreProcess *coreProcessData(short pid);
 int sendEvent(int pid, void *event, size_t size);
+void initProcessConf(ProcessConf *conf);
 
+int createConfigurableProcess(ProcessConf *conf, const char *name, int (*_main)(int, char**), int argc, char **argv, int run);
 int createProcess(const char *name, int prio, int (*_main)(int, char**), int argc, char **argv, int run);
 int resetProcess(int pid, int argc, char **argv);
 

@@ -53,6 +53,7 @@ static void timer_displatcher(TimerEvent *event)
     if(timers[event->head.id].pid < 0)
         return;
 
+    timers[event->head.id].sended --;
     if(timers[event->head.id].last) {
         timers[event->head.id].pid = -1;
         timers[event->head.id].last = 0;
@@ -60,7 +61,7 @@ static void timer_displatcher(TimerEvent *event)
     }
 
     event->callback(event->head.id);
-    timers[event->head.id].sended --;
+
 }
 
 
@@ -133,8 +134,8 @@ int timerStop(int id)
 
     if(timer->sended < 1)
         timer->pid = -1;
-
-    timer->last = 1;
+    else
+        timer->last = 1;
     return err;
 }
 

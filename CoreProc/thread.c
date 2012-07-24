@@ -189,6 +189,7 @@ int createThread(int prio, int (*handle)(void *), void *data, int run)
     thread->t.stack_size = stack_size;
     thread->ppid = pid();
     thread->t.type = 2;
+    thread->t.is_stack_freeable = 1;
     thread->handle = handle;
     thread->data = data;
     thread->retcode = 0;

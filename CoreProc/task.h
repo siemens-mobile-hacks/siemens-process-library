@@ -6,11 +6,13 @@
 #include <stddef.h>
 
 #define DEFAULT_STACK_SIZE 0x4000
+#define DEFAULT_PRIO 90
 
 typedef struct
 {
     NU_TASK *task;
     void *stack;
+    char is_stack_freeable;
     short stack_size;
     NU_QUEUE *events;
     void *mem;

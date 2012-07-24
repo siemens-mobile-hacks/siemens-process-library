@@ -8,6 +8,7 @@
 #include "waitcondition.h"
 #include "gbs_tweak.h"
 
+#define UNUSED(x) ((void)x);
 
 typedef struct
 {
@@ -199,7 +200,9 @@ static void kill_process(int _pid)
     NU_Terminate_Task(proc->t.task);
     NU_Delete_Task(proc->t.task);
 
-    free(proc->t.stack);
+    if(proc->t.is_stack_freeable)
+        free(proc->t.stack);
+
     free(proc->t.task);
 
     if(proc->kostil.kik)
@@ -210,13 +213,14 @@ static void kill_process(int _pid)
 }
 
 
-static void kill_impl(int _pid)
+static void kill_impl(int _pid, int code)
 {
     CoreProcess *proc = coreProcessData(_pid);
     if(!proc || proc->t.id < 0 || proc->terminated == 2)
         return;
 
     proc->terminated = 2;
+    proc->retcode = code;
 
     int wc = proc->exit_wait_cond;
     proc->exit_wait_cond = -1;
@@ -275,6 +279,9 @@ static void kill_impl(int _pid)
 
 static void handle(int argc, void *argv)
 {
+    UNUSED(argc);
+    UNUSED(argc);
+
     CoreProcess *proc;
 
     if(argv)
@@ -285,7 +292,7 @@ static void handle(int argc, void *argv)
     short mpid = proc->t.id;
     if(proc->kill_mode)
     {
-        kill_impl(mpid);
+        kill_impl(mpid, proc->retcode);
         return;
     }
 
@@ -319,11 +326,12 @@ static void handle(int argc, void *argv)
 
     proc->retcode = proc->main(proc->argc, proc->argv);
 
-    kill_impl(mpid);
+    kill_impl(mpid, proc->retcode);
 }
 
 
 static void process_bump(CoreEventProcess *event) {
+    UNUSED(event)
     coreProcessData(pid())->t.event_stop = 1;
 }
 
@@ -341,7 +349,7 @@ void quit()
 void kill(int _pid, int code)
 {
     if(_pid == pid()) { // self kill
-        kill_impl(_pid);
+        kill_impl(_pid, code);
     } else {
 
         CoreProcess *proc = coreProcessData(_pid);
@@ -350,6 +358,7 @@ void kill(int _pid, int code)
 
         proc->kill_mode = 1;
         proc->terminated = 1;
+        proc->retcode = code;
 
         NU_Terminate_Task(proc->t.task);
         NU_Reset_Task(proc->t.task, _pid, proc);
@@ -381,19 +390,53 @@ void processEvents()
 }
 
 
+void initProcessConf(ProcessConf *conf)
+{
+    conf->prio = 0;
+    conf->stack = 0;
+    conf->stack_size = 0;
+    conf->is_stack_freeable = 0;
+}
+
 
 int createProcess(const char *name, int prio, int (*_main)(int, char**), int argc, char **argv, int run)
 {
+    ProcessConf conf;
+    initProcessConf(&conf);
 
+    conf.prio = prio;
+    return createConfigurableProcess(&conf, name, _main, argc, argv, run);
+}
+
+
+int createConfigurableProcess(ProcessConf *conf, const char *name, int (*_main)(int, char**), int argc, char **argv, int run)
+{
     CoreProcess *proc = newCoreProcessData();
     if(!proc)
         return -1;
 
-    short _pid = proc->t.id;
-    NU_TASK *task = malloc(sizeof *task);
-    void *stack = malloc(DEFAULT_STACK_SIZE);
-    int stack_size = DEFAULT_STACK_SIZE;
+    static ProcessConf defaults = {
+        .prio = DEFAULT_PRIO,
+        .stack_size = DEFAULT_STACK_SIZE,
+        .stack = 0,
+        .is_stack_freeable = 1
+    };
 
+    if(!conf)
+        conf = &defaults;
+
+    if(conf->stack && conf->stack_size < 1) {
+        printf("Invalid stack size\n");
+        return -3;
+    }
+
+    int prio = conf->prio? conf->prio : DEFAULT_PRIO;
+    int stack_size = conf->stack_size? conf->stack_size : DEFAULT_STACK_SIZE;
+    void *stack = conf->stack? conf->stack : malloc(stack_size);
+    short _pid = proc->t.id;
+    int err = 0;
+
+    NU_TASK *task = malloc(sizeof *task);
     memset(task, 0, sizeof *task);
     proc->t.task = task;
     proc->t.stack = stack;
@@ -401,16 +444,20 @@ int createProcess(const char *name, int prio, int (*_main)(int, char**), int arg
     proc->argc = argc;
     proc->argv = argv;
     proc->t.type = 1;
+    proc->t.is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
     proc->ppid = pid();
     proc->name = strdup(name);
     proc->main = _main;
     proc->retcode = 0;
 
 
-    if( NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START) != NU_SUCCESS )
+    if( (err = NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
     {
         free(task);
-        free(stack);
+
+        if(proc->t.is_stack_freeable)
+            free(stack);
+
         if(proc->name)
             free(proc->name);
 
@@ -419,7 +466,10 @@ int createProcess(const char *name, int prio, int (*_main)(int, char**), int arg
         free(argv);
 
         freeCoreProcessData(_pid);
-        return -1;
+        //char d[128];
+        //sprintf(d, "Creating process failed %d\n", err);
+        //ShowMSG(1, (int)d);
+        return err;
     }
 
     corearray_init(&proc->ctors, NULL);
@@ -435,13 +485,14 @@ int createProcess(const char *name, int prio, int (*_main)(int, char**), int arg
 }
 
 
+
 int resetProcess(int pid, int argc, char **argv)
 {
     CoreProcess *proc = coreProcessData(pid);
     if(!proc || proc->t.id < 0)
         return -1;
 
-    proc->argc = 0;
+    proc->argc = argc;
     proc->argv = argv;
 
     NU_Suspend_Task(proc->t.task);
