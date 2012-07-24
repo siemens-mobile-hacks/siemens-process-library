@@ -1,6 +1,7 @@
 
 #include <swilib.h>
 #include <nu_swilib.h>
+#include "process.h"
 #include "waitcondition.h"
 
 
@@ -8,6 +9,7 @@ typedef struct
 {
     NU_SEMAPHORE sema;
     int waiters;
+    int pid, dt_id;
     char used;
 }WaitCondition;
 
@@ -34,7 +36,7 @@ static int getBestWcID()
 
 static WaitCondition *getWcData(int wid)
 {
-    if(wid < 0 || wid > MAX_WAITCOND-1)
+    if(wid < 0 || wid >= MAX_WAITCOND)
         return 0;
 
     return &__wcond_data[wid];
@@ -51,11 +53,15 @@ int createWaitCond(const char *name)
 
     wc->used = 1;
     wc->waiters = 0;
+    wc->pid = pid();
+    wc->dt_id = -1;
 
     int status = 0;
     if((status = NU_Create_Semaphore(&wc->sema, (CHAR*)name, 0, NU_PRIORITY)) != NU_SUCCESS) {
         wc->used = 0;
         return -1;
+    } else {
+        wc->dt_id = addProcessDtors(wc->pid, (void*)destroyWaitCond, (void *)id, 0);
     }
 
     return id;
@@ -67,6 +73,8 @@ int destroyWaitCond(int wid)
     WaitCondition *wc = getWcData(wid);
     if(!wc || !wc->used)
         return -1;
+
+    eraseProcessDtor(wc->pid, wc->dt_id);
 
     int status = 0;
     status = NU_Delete_Semaphore(&wc->sema);
