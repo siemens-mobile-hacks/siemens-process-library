@@ -16,6 +16,8 @@ static int memAllocID = -1;
 
 static void *onCreate(int _pid)
 {
+    UNUSED(_pid);
+
     CoreList *list = malloc(sizeof *list);
     corelist_init(list);
     //printf("mem: onCreate %d %X\n", _pid, list);
@@ -33,7 +35,7 @@ static void onClose(ResCtlData *data)
     struct CoreListInode *inode;
     corelist_clean_foreach_begin(inode, list->first) {
         if(inode->self) {
-            printf("\033[1m\033[31mpid: %d - free leak ptr: %X\033[0m\n", pid(), inode->self);
+            printf("\033[1m\033[31mpid: %d - free leak ptr: %X\033[0m\n", getpid(), inode->self);
             free(inode->self);
         }
         inode->self = 0;

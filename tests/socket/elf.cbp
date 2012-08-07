@@ -52,14 +52,11 @@
 			<Add library="gcc" />
 			<Add library="coreproc" />
 			<Add library="usart" />
+			<Add library="c-1.2" />
 		</Linker>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="socket.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="socket.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />

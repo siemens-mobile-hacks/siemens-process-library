@@ -17,11 +17,20 @@ void _init()
     void initWaitCond();
     initWaitCond();
 
+    void fdsInit();
+    fdsInit();
+
     void resCtlInit();
     resCtlInit();
 
     void memCtlInit();
     memCtlInit();
+
+    void createIOResCtl();
+    createIOResCtl();
+
+    void socketsInit();
+    socketsInit();
 
     void processInit();
     processInit();
@@ -54,6 +63,12 @@ void _fini()
 
     void coreThreadsFini();
     coreThreadsFini();
+
+    void socketsFini();
+    socketsFini();
+
+    void closeIOResCtl();
+    closeIOResCtl();
 
     void memCtlFini();
     memCtlFini();

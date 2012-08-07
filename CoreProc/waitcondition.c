@@ -53,7 +53,7 @@ int createWaitCond(const char *name)
 
     wc->used = 1;
     wc->waiters = 0;
-    wc->pid = pid();
+    wc->pid = getpid();
     wc->dt_id = -1;
 
     int status = 0;
@@ -100,7 +100,7 @@ int waitCondition(int wid)
     int status = NU_Obtain_Semaphore(&wc->sema, NU_SUSPEND);
     if(status != NU_SUCCESS)
         wc->waiters--;
-
+    //printf("waitCondition: status %d\n", status);
     return status;
 }
 
@@ -120,6 +120,7 @@ int wakeOneWaitCond(int wid)
     int status = NU_Release_Semaphore(&wc->sema);
     if(status == NU_SUCCESS)
         wc->waiters--;
+    //printf("wakeOneWaitCond: status %d\n", status);
     return status;
 }
 
@@ -129,6 +130,13 @@ int wakeAllWaitConds(int wid)
     WaitCondition *wc = getWcData(wid);
     if(!wc || !wc->used)
         return -1;
+
+
+    if(wc->waiters < 1)
+    {
+        wc->waiters = 0;
+        return 0;
+    }
 
     int status = 0;
     int cnt = wc->waiters;

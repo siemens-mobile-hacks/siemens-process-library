@@ -87,7 +87,7 @@ int timerStart(unsigned long time, void (*callback)(int))
     struct TimerData *timer = &timers[id];
 
     timer->callback = callback;
-    timer->pid = pid();
+    timer->pid = getpid();
     timer->sended = 0;
     timer->last = 0;
 

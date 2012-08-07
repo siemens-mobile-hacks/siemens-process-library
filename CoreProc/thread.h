@@ -12,8 +12,8 @@ int resumeThread(int tid);
 int destroyThread(int tid);
 
 int tidByTask(NU_TASK *task);
-int tid();
-int ptid();
+int gettid();
+int getptid();
 
 
 int waitForThreadStarted(int _tid);

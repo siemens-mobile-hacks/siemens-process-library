@@ -13,7 +13,7 @@ int csz = 20;
 
 int proc_main(int argc, char **argv)
 {
-    printf("proc_main: ppid: %d | pid: %d\n", ppid(), pid());
+    printf("proc_main: ppid: %d | pid: %d\n", getppid(), getpid());
     NU_Sleep(90);
     return 0;
 }
@@ -23,7 +23,7 @@ int proc_main(int argc, char **argv)
 int main()
 {
     initUsart();
-    printf(" [+] main: pid: %d\n", pid());
+    printf(" [+] main: pid: %d\n", getpid());
 
 
     for(int i=0; i<csz; ++i)

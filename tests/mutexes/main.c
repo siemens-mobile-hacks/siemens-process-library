@@ -68,7 +68,7 @@ int main()
     createMutex(&mutex);
     wid1 = createWaitCond("wait");
 
-    printf("pid: %d\n", pid());
+    printf("pid: %d\n", getpid());
 
     mtid3 = createThread(95, thread_main3, 0, 1); // создадим тред с трулоком
 

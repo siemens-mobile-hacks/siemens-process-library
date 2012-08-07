@@ -8,7 +8,7 @@
 #include "waitcondition.h"
 #include "gbs_tweak.h"
 
-#define UNUSED(x) ((void)x);
+
 
 typedef struct
 {
@@ -122,19 +122,9 @@ int sendEvent(int pid, void *event, size_t size)
 }
 
 
-int parentPid(int _pid)
+int getppid()
 {
-    CoreProcess *proc = coreProcessData(_pid);
-    if(!proc)
-        return 0;
-
-    return proc->ppid;
-}
-
-
-int ppid()
-{
-    CoreProcess *proc = coreProcessData(pid());
+    CoreProcess *proc = coreProcessData(getpid());
     if(!proc)
         return 0;
 
@@ -167,7 +157,7 @@ int pidByTask(NU_TASK *task)
 }
 
 
-int pid()
+int getpid()
 {
     NU_TASK *task = NU_Current_Task_Pointer();
     if(!task)
@@ -175,7 +165,7 @@ int pid()
 
     int tid = tidByTask(task);
     if(tid > -1) {
-        return ptid(tid);
+        return getptid(tid);
     }
 
     return pidByTask(task);
@@ -287,7 +277,7 @@ static void handle(int argc, void *argv)
     if(argv)
         proc = (CoreProcess *)argv;
     else
-        proc = coreProcessData(pid());
+        proc = coreProcessData(getpid());
 
     short mpid = proc->t.id;
     if(proc->kill_mode)
@@ -331,8 +321,8 @@ static void handle(int argc, void *argv)
 
 
 static void process_bump(CoreEventProcess *event) {
-    UNUSED(event)
-    coreProcessData(pid())->t.event_stop = 1;
+    UNUSED(event);
+    coreProcessData(getpid())->t.event_stop = 1;
 }
 
 
@@ -342,13 +332,13 @@ void quit()
     event.head.id = SIGKILL;
     event.head.type = CORE_EVENT_PROCESS;
     event.head.dispatcher = (void(*)(void*))process_bump;
-    sendEvent(pid(), &event, sizeof event);
+    sendEvent(getpid(), &event, sizeof event);
 }
 
 
 void kill(int _pid, int code)
 {
-    if(_pid == pid()) { // self kill
+    if(_pid == getpid()) { // self kill
         kill_impl(_pid, code);
     } else {
 
@@ -369,7 +359,7 @@ void kill(int _pid, int code)
 
 void processEvents()
 {
-    CoreProcess *proc = coreProcessData(pid());
+    CoreProcess *proc = coreProcessData(getpid());
     NU_QUEUE *queue = proc->t.events;
     unsigned long actual_size;
     int event[128];
@@ -445,7 +435,7 @@ int createConfigurableProcess(ProcessConf *conf, const char *name, int (*_main)(
     proc->argv = argv;
     proc->t.type = 1;
     proc->t.is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
-    proc->ppid = pid();
+    proc->ppid = getpid();
     proc->name = strdup(name);
     proc->main = _main;
     proc->retcode = 0;

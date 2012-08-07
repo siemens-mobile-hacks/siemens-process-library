@@ -219,8 +219,9 @@ void *BridgeMessageSend(void *func_ptr, int type, void *packed_args)
     void *retrn = BridgeMessageSend((void *)func, run_type, args);\
     return (ret_type)retrn;
 
-#define UNUSED(x) ((void)x);
-
+#ifndef UNUSED
+#define UNUSED(x) ((void)x)
+#endif
 
 void _sync_ShowMSG(int type, int lang)
 {

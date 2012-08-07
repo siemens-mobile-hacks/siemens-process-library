@@ -13,7 +13,7 @@ int csz = 20;
 
 int thread_main(void *d)
 {
-    printf("thread_main: pid: %d | tid: %d\n", pid(), tid());
+    printf("thread_main: pid: %d | tid: %d\n", getpid(), gettid());
     return 0;
 }
 
@@ -22,7 +22,7 @@ int thread_main(void *d)
 int main()
 {
     initUsart();
-    printf(" [+] main: pid: %d\n", pid());
+    printf(" [+] main: pid: %d\n", getpid());
 
     for(int i=0; i<csz; ++i) {
         _tid[i] = createThread(94, thread_main, 0, 1);

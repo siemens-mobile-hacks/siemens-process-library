@@ -4,6 +4,7 @@
 #include "csm.h"
 #include "gui.h"
 
+#define UNUSED(x) ((void)x)
 
 
 typedef struct {
@@ -94,6 +95,7 @@ static void onRedraw(CoreGUI *data)
 
 static void onCreate(CoreGUI *data, void *(*malloc_adr)(int))
 {
+    UNUSED(malloc_adr);
     data->gui.state=1;
 
     if(!data->onCreate)
@@ -118,6 +120,7 @@ static void onCreate(CoreGUI *data, void *(*malloc_adr)(int))
 
 static void onClose(CoreGUI *data, void (*mfree_adr)(void *))
 {
+    UNUSED(mfree_adr);
     data->gui.state=0;
 
     if(!data->onClose)
@@ -142,6 +145,8 @@ static void onClose(CoreGUI *data, void (*mfree_adr)(void *))
 
 static void onFocus(CoreGUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *))
 {
+    UNUSED(malloc_adr);
+    UNUSED(mfree_adr);
     data->gui.state=2;
 
     if(!data->onFocus)
@@ -166,6 +171,7 @@ static void onFocus(CoreGUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(v
 
 static void onUnfocus(CoreGUI *data, void (*mfree_adr)(void *))
 {
+    UNUSED(mfree_adr);
     if (data->gui.state!=2) return;
     data->gui.state=1;
 
@@ -270,7 +276,7 @@ int guiCreate(RECT *canvas,
     memset(data, 0, sizeof *data);
     data->used = 1;
 
-    data->pid = pid();
+    data->pid = getpid();
     data->gui.canvas = canvas;
     data->gui.methods = (void *)coreGUIMethods;
     data->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();

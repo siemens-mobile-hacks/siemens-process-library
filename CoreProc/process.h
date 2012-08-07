@@ -57,9 +57,9 @@ int createConfigurableProcess(ProcessConf *conf, const char *name, int (*_main)(
 int createProcess(const char *name, int prio, int (*_main)(int, char**), int argc, char **argv, int run);
 int resetProcess(int pid, int argc, char **argv);
 
-int pid(void);
-int ppid(void);
-int parentPid(int pid);
+int getpid(void);
+int getppid(void);
+int getParentPid(int pid);
 const char *pidName();
 
 void kill(int pid, int code);

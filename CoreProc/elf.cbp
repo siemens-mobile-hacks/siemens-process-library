@@ -75,6 +75,10 @@
 		</Unit>
 		<Unit filename="exc_handler.h" />
 		<Unit filename="exc_vectors.s" />
+		<Unit filename="fs.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="fs.h" />
 		<Unit filename="gbs_tweak.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -83,6 +87,14 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="gui.h" />
+		<Unit filename="io.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="io.h" />
+		<Unit filename="ioresctl.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="ioresctl.h" />
 		<Unit filename="lcd_primitives.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -110,6 +122,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="resctl.h" />
+		<Unit filename="socket.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="socket.h" />
 		<Unit filename="system.s" />
 		<Unit filename="task.c">
 			<Option compilerVar="CC" />

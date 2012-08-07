@@ -120,14 +120,14 @@ int tidByTask(NU_TASK *task)
 }
 
 
-int tid()
+int gettid()
 {
     NU_TASK *task = NU_Current_Task_Pointer();
     return tidByTask(task);
 }
 
 
-int ptid(int tid)
+int getptid(int tid)
 {
     CoreThread *thread = getThreadData(tid);
     if(!thread)
@@ -142,10 +142,10 @@ static void thread_handle(int argc, void *argv)
     CoreThread *thread;
     if(argv)
         thread = (CoreThread *)argv;
-    thread = getThreadData(tid());
+    thread = getThreadData(argc);
 
     CoreProcess *parent = coreProcessData(thread->ppid);
-    thread->t.id = tid();
+    thread->t.id = argc;
 
     if(parent->t.id < 0)
         thread->t.events = 0;
@@ -187,7 +187,7 @@ int createThread(int prio, int (*handle)(void *), void *data, int run)
     thread->t.task = task;
     thread->t.stack = stack;
     thread->t.stack_size = stack_size;
-    thread->ppid = pid();
+    thread->ppid = getpid();
     thread->t.type = 2;
     thread->t.is_stack_freeable = 1;
     thread->handle = handle;

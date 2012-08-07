@@ -197,7 +197,7 @@ void onCloseCSM(CSM_RAM *ram)
 int main()
 {
     initUsart();
-    printf(" [+] main: pid: %d\n", pid());
+    printf(" [+] main: pid: %d\n", getpid());
 
     csm_id = csmCreate("test", CoreCSM_GUI, onCreateCSM, onCloseCSM, 0);
 

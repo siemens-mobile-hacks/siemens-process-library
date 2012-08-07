@@ -32,7 +32,7 @@ void onMessageCSM(CSM_RAM *ram, GBS_MSG *msg)
 int main()
 {
     initUsart();
-    printf(" [+] main: pid: %d\n", pid());
+    printf(" [+] main: pid: %d\n", getpid());
 
     csmCreate("test", CoreCSM_IDLE, onCreateCSM, onCloseCSM, onMessageCSM);
 

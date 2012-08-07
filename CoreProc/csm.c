@@ -181,7 +181,7 @@ int csmCreate(const char *name, int type,
     data->maincsm.onMessage = core_csm_message;
     data->maincsm.onCreate = core_csm_create;
     data->minus11 = -11;
-    data->pid = pid();
+    data->pid = getpid();
     data->dt_id = -1;
 
 #ifdef NEWSGOLD

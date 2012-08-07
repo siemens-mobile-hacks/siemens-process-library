@@ -9,7 +9,7 @@
                         .extern  swi2_def_jumper
                         .extern  swi3_def_jumper
 
-                        .extern  pid
+                        .extern  getpid
                         .extern  AbortCommonHandler
                         .extern  get_stack_pointer_from_proc
 
@@ -31,7 +31,7 @@
                          SUB       R5,  LR, #0x04
                          MRS       R6,  SPSR
 
-                         BL        pid
+                         BL        getpid
 
                          CMP       R0, #-1
                          BEQ       no_elf_dabort
@@ -73,7 +73,7 @@
                          SUB       R5,  LR, #0x04
                          MRS       R6,  SPSR
 
-                         BL        pid
+                         BL        getpid
 
                          CMP       R0, #-1
                          BEQ       no_elf_pabort
@@ -116,7 +116,7 @@
                          SUB       R5,  LR, #0x04
                          MRS       R6,  SPSR
 
-                         BL        pid
+                         BL        getpid
 
                          CMP       R0, #-1
                          BEQ       no_elf_undef
@@ -159,7 +159,7 @@
                          MOV       R3, LR
 
                          STMFD     SP!, {R3}
-                         BL        pid
+                         BL        getpid
                          LDMFD     SP!, {R3}
 
                          CMP       R0, #-1
@@ -203,7 +203,7 @@
                          MOV       R3, LR
 
                          STMFD     SP!, {R3}
-                         BL        pid
+                         BL        getpid
                          LDMFD     SP!, {R3}
 
                          CMP       R0, #-1

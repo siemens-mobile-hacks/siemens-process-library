@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "corelist.h"
 
-static void printout(const char *fmt, ...) {
-}
 
 void corelist_init_deb(CoreList *list, const char *file, int line)
 {
@@ -76,14 +74,14 @@ int corelist_check_inode(CoreList *list, struct CoreListInode *_inode)
 void corelist_del_inode_db(CoreList *list, struct CoreListInode *inode, const char *file, int line)
 {
     if(!list || !inode) {
-        printout("%s[%d]: WARNING: list(%X) or inode(%X) has null value!\n", file, line, list, inode);
+        //printout("%s[%d]: WARNING: list(%X) or inode(%X) has null value!\n", file, line, list, inode);
         return;
     }
 
     //printout("%s[%d]: %s(%X, %X)\n", file, line, __FUNCTION__, list, inode);
 
     if(!corelist_check_inode(list, inode)){
-        printout("Inode not exist in list!\n");
+        //printout("Inode not exist in list!\n");
         return;
     }
 

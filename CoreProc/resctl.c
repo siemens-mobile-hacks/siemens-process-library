@@ -131,6 +131,7 @@ int attachResCtl(int _pid, ResCtlData **_attach_data)
 
 int detachResCtl(int _pid, ResCtlData **_attach_data, int attached_cnt)
 {
+    UNUSED(_pid);
     if(attached_cnt < 1 || !*_attach_data) {
         return 0;
     }
