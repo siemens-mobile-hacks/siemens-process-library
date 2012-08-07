@@ -307,9 +307,6 @@ tests/proc/elf.cbp -text svneol=unset#application/xml
 tests/proc/main.c -text
 tests/socket/elf.cbp -text svneol=unset#application/xml
 tests/socket/main.c -text
-tests/socket/main.c.zip -text svneol=unset#application/zip
-tests/socket/socket.c -text
-tests/socket/socket.h -text
 tests/thread/elf.cbp -text svneol=unset#application/xml
 tests/thread/main.c -text
 tests/timer/elf.cbp -text svneol=unset#application/xml
