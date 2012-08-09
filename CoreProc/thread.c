@@ -1,11 +1,11 @@
 
 #include <swilib.h>
-#include "gbs_tweak.h"
-#include "thread.h"
-#include "task.h"
-#include "mutex.h"
-#include "waitcondition.h"
-#include "process.h"
+#include <spl/gbs_tweak.h>
+#include <spl/thread.h>
+#include <spl/task.h>
+#include <spl/mutex.h>
+#include <spl/waitcondition.h>
+#include <spl/process.h>
 
 
 typedef struct
@@ -92,10 +92,9 @@ int freeCoreThreadData(int _tid)
     if(!thread || thread->t.id < 0)
         return -1;
 
-    lockMutex(&tb_mutex);
-    thread->t.id = -1;
+
     thread->t.task = 0;
-    unlockMutex(&tb_mutex);
+    thread->t.id = -1;
     return 0;
 }
 
@@ -172,24 +171,57 @@ static void thread_handle(int argc, void *argv)
 
 int createThread(int prio, int (*handle)(void *), void *data, int run)
 {
+    TaskConf conf;
+    initTaskConf(&conf);
+
+    conf.prio = prio;
+    return createConfigurableThread(&conf, handle, data, run);
+}
+
+
+int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, int run)
+{
+    int pid = getpid();
+    enterProcessCriticalCode(pid);
+
     short id;
     CoreThread *thread = newCoreThreadData();
-    if(!thread)
+    if(!thread) {
+        leaveProcessCriticalCode(pid);
         return -1;
+    }
+
+
+
+    static TaskConf defaults = {
+        .prio = DEFAULT_PRIO,
+        .stack_size = DEFAULT_STACK_SIZE,
+        .stack = 0,
+        .is_stack_freeable = 1
+    };
+
+    if(!conf)
+        conf = &defaults;
 
     id = thread->t.id;
 
-    NU_TASK *task = malloc(sizeof(*task));
-    void *stack = malloc(DEFAULT_STACK_SIZE);
-    int stack_size = DEFAULT_STACK_SIZE;
+    if(conf->stack && conf->stack_size < 1) {
+        printf("Invalid stack size\n");
+        return -3;
+    }
 
+    int prio = conf->prio? conf->prio : DEFAULT_PRIO;
+    int stack_size = conf->stack_size? conf->stack_size : DEFAULT_STACK_SIZE;
+    void *stack = conf->stack? conf->stack : malloc(stack_size);
+
+    NU_TASK *task = malloc(sizeof(*task));
     memset(task, 0, sizeof *task);
     thread->t.task = task;
     thread->t.stack = stack;
     thread->t.stack_size = stack_size;
-    thread->ppid = getpid();
+    thread->ppid = pid;
     thread->t.type = 2;
-    thread->t.is_stack_freeable = 1;
+    thread->t.is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
     thread->handle = handle;
     thread->data = data;
     thread->retcode = 0;
@@ -208,6 +240,7 @@ int createThread(int prio, int (*handle)(void *), void *data, int run)
         free(stack);
 
         freeCoreThreadData(thread->t.id);
+        leaveProcessCriticalCode(pid);
         return -2;
     }
 
@@ -217,6 +250,7 @@ int createThread(int prio, int (*handle)(void *), void *data, int run)
     if(run)
         NU_Resume_Task(task);
 
+    leaveProcessCriticalCode(pid);
     return id;
 }
 
@@ -226,6 +260,9 @@ int destroyThread(int tid)
     CoreThread *thread = getThreadData(tid);
     if(!thread || thread->t.id < 0)
         return -1;
+
+    int pid = getpid();
+    enterProcessCriticalCode(pid);
 
     NU_Suspend_Task(thread->t.task);
     NU_Terminate_Task(thread->t.task);
@@ -237,6 +274,8 @@ int destroyThread(int tid)
     delProcessThread(thread->ppid, thread->ppid_list_inode);
 
     freeCoreThreadData(thread->t.id);
+
+    leaveProcessCriticalCode(pid);
     return 0;
 }
 

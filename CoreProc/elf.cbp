@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="CoreProc" />
+		<Option title="SiemensProcessLibrary" />
 		<Option pch_mode="2" />
 		<Option compiler="armelfgcc" />
 		<Build>
 			<Target title="NSG">
-				<Option output="exe/libcoreproc.so" prefix_auto="0" extension_auto="0" />
+				<Option output="exe/libspl.so" prefix_auto="0" extension_auto="0" />
 				<Option object_output="objects/nsg" />
 				<Option type="3" />
 				<Option compiler="armelfgcc" />
@@ -87,6 +87,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="gui.h" />
+		<Unit filename="helperproc.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="io.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -118,6 +121,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="processbridge.h" />
+		<Unit filename="queue.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="resctl.c">
 			<Option compilerVar="CC" />
 		</Unit>

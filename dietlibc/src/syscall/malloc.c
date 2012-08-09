@@ -1,10 +1,11 @@
 
 #include <swihelper.h>
+#include <unistd.h>
 #include <stddef.h>
-
+#include <spl/memctl.h>
 
 
 void *malloc(size_t size)
 {
-    __def_noinline(20, void*, size);
+    return memoryAlloc(getpid(), size);
 }

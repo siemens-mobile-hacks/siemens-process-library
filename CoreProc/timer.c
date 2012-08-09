@@ -1,9 +1,9 @@
 
 #include <swilib.h>
 #include <nu_swilib.h>
-#include "coreevent.h"
-#include "timer.h"
-#include "process.h"
+#include <spl/coreevent.h>
+#include <spl/timer.h>
+#include <spl/process.h>
 
 
 
@@ -84,10 +84,13 @@ int timerStart(unsigned long time, void (*callback)(int))
     if(id < 0)
         return -1;
 
+    int pid = getpid();
+    enterProcessCriticalCode(pid);
+
     struct TimerData *timer = &timers[id];
 
     timer->callback = callback;
-    timer->pid = getpid();
+    timer->pid = pid;
     timer->sended = 0;
     timer->last = 0;
 
@@ -97,6 +100,8 @@ int timerStart(unsigned long time, void (*callback)(int))
         printf("timerStart: err %d\n", err);
     } else
         timer->dt_id = addProcessDtors(timer->pid, (void (*)(void*, void*))timerStop, (void *)id, 0);
+
+    leaveProcessCriticalCode(pid);
 
     return err == NU_SUCCESS?
             id : err;

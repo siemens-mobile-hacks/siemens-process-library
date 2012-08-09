@@ -2,7 +2,7 @@
 
 #include <swilib.h>
 #include <de/drawing.h>
-#include <lcd_primitives.h>
+#include <spl/lcd_primitives.h>
 
 
 LCDLAYER lcd_layer;

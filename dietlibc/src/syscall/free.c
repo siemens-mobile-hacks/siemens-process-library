@@ -1,10 +1,11 @@
 
 #include <swihelper.h>
 #include <stddef.h>
-
+#include <spl/memctl.h>
+#include <unistd.h>
 
 
 void free(void * data)
 {
-    __def_noinline(21, void, data);
+    memoryFree(getpid(), data);
 }

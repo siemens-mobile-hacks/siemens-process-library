@@ -1,7 +1,7 @@
 
-#include "fs.h"
-#include "processbridge.h"
-#include "process.h"
+#include <spl/fs.h>
+#include <spl/processbridge.h>
+#include <spl/process.h>
 
 
 #include <fcntl.h>

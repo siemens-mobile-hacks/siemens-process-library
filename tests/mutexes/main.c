@@ -1,10 +1,10 @@
 
-#include <process.h>
-#include <processbridge.h>
-#include <coreevent.h>
-#include <thread.h>
-#include <mutex.h>
-#include <waitcondition.h>
+#include <spl/process.h>
+#include <spl/processbridge.h>
+#include <spl/coreevent.h>
+#include <spl/thread.h>
+#include <spl/mutex.h>
+#include <spl/waitcondition.h>
 
 
 
@@ -21,7 +21,7 @@ int thread_main1(void *d)
 
     lockMutex(&mutex);
     NU_Sleep(100); // если даже мы будем спать, все равно второй тред не влезет перд нами *trollface*
-    printf("1: tid: %d\n", tid());
+    printf("1: tid: %d\n", gettid());
     unlockMutex(&mutex);
 
     wakeOneWaitCond(wid1);
@@ -34,7 +34,7 @@ int thread_main2(void *d)
     printf("thread_main2\n");
 
     lockMutex(&mutex);
-    printf("2: tid: %d\n", tid());
+    printf("2: tid: %d\n", gettid());
     unlockMutex(&mutex);
 
     wakeOneWaitCond(wid1);
@@ -49,7 +49,7 @@ int thread_main3(void *d)
 
     if( !tryLockMutex(&mutex) ) {
         printf("had!\n");
-        printf("3: tid: %d\n", tid());
+        printf("3: tid: %d\n", gettid());
         unlockMutex(&mutex);
     } else {
         printf("late...\n");
@@ -61,10 +61,10 @@ int thread_main3(void *d)
 
 
 
-
 int main()
 {
     initUsart();
+
     createMutex(&mutex);
     wid1 = createWaitCond("wait");
 
@@ -94,6 +94,7 @@ int main()
     destroyThread(mtid3);
     destroyMutex(&mutex);
     destroyWaitCond(wid1);
+    printf("Ram: %d\n", GetFreeRamAvail());
     return 0;
 }
 

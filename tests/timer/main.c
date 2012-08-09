@@ -1,8 +1,8 @@
 
-#include <process.h>
-#include <timer.h>
-#include <coreevent.h>
-#include <waitcondition.h>
+#include <spl/process.h>
+#include <spl/timer.h>
+#include <spl/coreevent.h>
+#include <spl/waitcondition.h>
 
 /* NOTE
  * Таймер циклически дёргает кальбак, не одиночно.

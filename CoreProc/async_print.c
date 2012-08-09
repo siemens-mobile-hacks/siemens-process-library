@@ -1,15 +1,16 @@
 
 #include <swilib.h>
 #include <usart.h>
-#include "mutex.h"
-
-
+#include <spl/process.h>
+#include <spl/mutex.h>
+#include <spl/queue.h>
+#include <spl/memctl.h>
 
 
 char _debug_data[4*1024];
 static CoreMutex mutex = {.locks = 0};
 int __printh_pid = -1;
-static NU_QUEUE queue;
+static int queue;
 
 
 void initUsart()
@@ -34,11 +35,21 @@ void initUsart()
 void asyncPrintInit()
 {
     createMutex(&mutex);
+
+    extern int print_handle(int, char**);
+    __printh_pid = createProcess("print", 120, print_handle, 0, 0, 1);
 }
 
 
 void asyncPrintFini()
 {
+    extern void abort_printing();
+    int p = __printh_pid;
+
+    abort_printing();
+    waitForProcessFinished(p, 0);
+    __printh_pid = -1;
+
     destroyMutex(&mutex);
 }
 
@@ -61,28 +72,31 @@ void print(int sz, const char *str)
         return;
     }
 
-    NU_Send_To_Queue(&queue, (void*)str, sz/4+1, NU_SUSPEND);
+    NU_Send_To_Queue(getQueueDataByID(queue), (void*)str, sz/4+1, NU_SUSPEND);
 }
 
 
 void abort_printing()
 {
     __printh_pid = -1;
-    NU_Send_To_Queue(&queue, (void*)"abrt", 1, NU_SUSPEND);
+    NU_Send_To_Queue(getQueueDataByID(queue), (void*)"abrt", 1, NU_SUSPEND);
 }
 
 
-int print_handle()
+int print_handle(int argc, char **argv)
 {
-    void *mem = malloc(10* 1024*4);
+    UNUSED(argc);
+    UNUSED(argv);
 
-    if(NU_Create_Queue(&queue, "print", mem, 10*1024, NU_VARIABLE_SIZE, 1024*2, NU_FIFO) != NU_SUCCESS) {
+    void *mem = memoryAlloc(getpid(), 10* 1024*4);
+
+    if( (queue = createQueue("print", mem, 10*1024, NU_VARIABLE_SIZE, 1024*2, NU_FIFO)) < 0 ) {
         return -1;
     }
 
     unsigned long asize;
     char data[4*1024 * 2];
-    while(NU_Receive_From_Queue(&queue, data, 1024*2, &asize, NU_SUSPEND) == NU_SUCCESS)
+    while(NU_Receive_From_Queue(getQueueDataByID(queue), data, 1024*2, &asize, NU_SUSPEND) == NU_SUCCESS)
     {
         if(__printh_pid < 0)
             break;
@@ -90,9 +104,9 @@ int print_handle()
         uart_poll_tx_string(0, data);
     }
 
-    NU_Delete_Queue(&queue);
-    free(mem);
-
+    destroyQueue(queue);
+    queue = -1;
+    memoryFree(getpid(), mem);
     return 0;
 }
 

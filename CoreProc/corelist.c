@@ -1,19 +1,22 @@
 
 #include <swilib.h>
 #include <stdio.h>
-#include "corelist.h"
+#include <spl/coreevent.h>
+#include <spl/corelist.h>
 
 
 void corelist_init_deb(CoreList *list, const char *file, int line)
 {
+    UNUSED(file);
+    UNUSED(line);
     memset(list, 0, sizeof(*list));
 }
 
 
 void corelist_release(CoreList *list)
 {
-    //if(list->size)
-    //    printf("List(%X) not freed fully!\n", (uint32_t)list);
+    if(list->size)
+        printf("List(%X) not freed fully!\n", (uint32_t)list);
 }
 
 
@@ -73,6 +76,9 @@ int corelist_check_inode(CoreList *list, struct CoreListInode *_inode)
 
 void corelist_del_inode_db(CoreList *list, struct CoreListInode *inode, const char *file, int line)
 {
+    UNUSED(file);
+    UNUSED(line);
+
     if(!list || !inode) {
         //printout("%s[%d]: WARNING: list(%X) or inode(%X) has null value!\n", file, line, list, inode);
         return;
@@ -133,12 +139,31 @@ int corelist_pop(CoreList *list, void *value)
 }
 
 
+CoreList *corelist_fork(CoreList *list)
+{
+    CoreList *l = malloc(sizeof(*l));
+    if(!l)
+        return 0;
+
+    corelist_init(l);
+
+    struct CoreListInode *inode = 0;
+    corelist_foreach(inode, list->first)
+    {
+        corelist_push_back(l, inode->self);
+    }
+
+    return l;
+}
+
+
 void corelist_lock(CoreList *list)
 {
+    UNUSED(list);
 }
 
 
 void corelist_unlock(CoreList *list)
 {
-
+    UNUSED(list);
 }

@@ -1,8 +1,8 @@
 
-#include <process.h>
-#include <thread.h>
-#include <coreevent.h>
-#include <waitcondition.h>
+#include <spl/process.h>
+#include <spl/thread.h>
+#include <spl/coreevent.h>
+#include <spl/waitcondition.h>
 
 
 
@@ -32,6 +32,7 @@ int main()
         waitForThreadFinished(_tid[i], 0);
 
     printf("All threads finished\n");
+    printf("Ram %d\n", GetFreeRamAvail());
     return 0;
 }
 

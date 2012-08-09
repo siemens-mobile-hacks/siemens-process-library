@@ -1,10 +1,11 @@
 
-#include "coreevent.h"
-#include "process.h"
-#include "csm.h"
-#include "gui.h"
+#include <swilib.h>
+#include <spl/coreevent.h>
+#include <spl/process.h>
+#include <spl/csm.h>
+#include <spl/gui.h>
+#include <spl/mutex.h>
 
-#define UNUSED(x) ((void)x)
 
 
 typedef struct {
@@ -37,16 +38,24 @@ typedef struct {
 
 
 
-CoreGUI gui_list[128];
-
+static CoreGUI gui_list[128];
+static CoreMutex mutex;
 
 
 void guiInit()
 {
+    createMutex(&mutex);
     for(int i=0; i<128; ++i) {
         gui_list[i].cg_id = -1;
         gui_list[i].used = 0;
     }
+}
+
+
+__attribute_destructor
+void guiFini()
+{
+    destroyMutex(&mutex);
 }
 
 
@@ -68,6 +77,36 @@ static int find_best_id()
 }
 
 
+static int new_gui_id()
+{
+    lockMutex(&mutex);
+    int id = find_best_id();
+    CoreGUI *g = getCoreGUIData(id);
+
+    if(!g) {
+        unlockMutex(&mutex);
+        return -1;
+    }
+
+    g->id = id;
+    unlockMutex(&mutex);
+    return id;
+}
+
+
+static int free_gui_id(int id)
+{
+    CoreGUI *g = getCoreGUIData(id);
+    if(!g || g->id != id)
+        return -1;
+
+    g->id = -1;
+    g->pid = -1;
+    g->cg_id = -1;
+    g->dt_id = -1;
+    g->used = 0;
+    return 0;
+}
 
 
 
@@ -229,11 +268,7 @@ static int onKey(CoreGUI *data, GUI_MSG *msg)
 
 
 static void onDestroy(CoreGUI *data) {
-    data->id = -1;
-    data->pid = -1;
-    data->cg_id = -1;
-    data->dt_id = -1;
-    data->used = 0;
+    free_gui_id(data->id);
 }
 
 
@@ -268,8 +303,11 @@ int guiCreate(RECT *canvas,
               void (*onKey)(int id, GUI_MSG *),
                void *userdata)
 {
-    int id;
-    CoreGUI *data = getCoreGUIData((id = find_best_id()));
+    int pid = getpid();
+    enterProcessCriticalCode(pid);
+
+    int id = new_gui_id();
+    CoreGUI *data = getCoreGUIData(id);
     if(!data)
         return id;
 
@@ -286,7 +324,6 @@ int guiCreate(RECT *canvas,
     data->onFocus = onFocus;
     data->onUnfocus = onUnfocus;
     data->onKey = onKey;
-    data->id = id;
     data->close_emited = 0;
     data->userdata = userdata;
 
@@ -299,6 +336,7 @@ int guiCreate(RECT *canvas,
     } else {
         data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))guiClose, (void *)id, 0);
     }
+    leaveProcessCriticalCode(pid);
 
     return data->id;
 }

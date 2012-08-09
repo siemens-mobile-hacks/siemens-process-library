@@ -1,20 +1,30 @@
 
 #include <stddef.h>
 #include <stdio.h>
-#include "process.h"
-#include "ioresctl.h"
-#include "io.h"
+#include <spl/process.h>
+#include <spl/ioresctl.h>
+#include <spl/io.h>
+#include <spl/mutex.h>
 
 
 
 static idStream fds[256];
-
+static CoreMutex mutex;
 
 void fdsInit()
 {
+    createMutex(&mutex);
     for(int i=0; i<256; ++i)
         fds[i].id = -1;
 }
+
+
+__attribute_destructor
+void fdsFini()
+{
+    destroyMutex(&mutex);
+}
+
 
 
 idStream *getStreamData(int fd)
@@ -29,9 +39,11 @@ idStream *getStreamData(int fd)
 static void stub(){}
 int open_fd()
 {
+    lockMutex(&mutex);
     for(int i=0; i<256; ++i)
         if(fds[i].id == -1) {
             fds[i].id = i;
+            unlockMutex(&mutex);
 
             fds[i].read = (ssize_t (*)(int, void*, size_t))stub;
             fds[i].write = (ssize_t (*)(int, const void*, size_t))stub;
@@ -43,6 +55,7 @@ int open_fd()
             return i;
         }
 
+    unlockMutex(&mutex);
     return -1;
 }
 
@@ -61,6 +74,7 @@ int close_fd(int fd)
     IOStreamClose(s->pid, d, fd);
     int r = s->close? s->close(fd) : 0;
     s->id = -1;
+    printf("close_fd(%d) done\n", fd);
     return r;
 }
 

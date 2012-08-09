@@ -1,12 +1,14 @@
 
 #include <swilib.h>
-#include "task.h"
-#include "mutex.h"
-#include "waitcondition.h"
-#include "corearray.h"
+#include <spl/task.h>
+#include <spl/mutex.h>
+#include <spl/process.h>
+#include <spl/waitcondition.h>
+#include <spl/corearray.h>
 #include <fcntl.h>
-#include "socket.h"
-#include "io.h"
+#include <spl/socket.h>
+#include <spl/ioresctl.h>
+#include <spl/io.h>
 
 
 
@@ -165,11 +167,9 @@ static CoreSocket *newSocket()
     CoreSocket *sock = getSocketData((_sid = emptySocket()));
     if(sock) {
         sock->id = _sid;
-        unlockMutex(&mutex);
+    }
 
-    } else
-        unlockMutex(&mutex);
-
+    unlockMutex(&mutex);
     return sock;
 }
 
@@ -180,9 +180,7 @@ static int freeSocket(int _sid)
     if(!sock || sock->id < 0)
         return -1;
 
-    lockMutex(&mutex);
     sock->id = -1;
-    unlockMutex(&mutex);
     return 0;
 }
 
@@ -217,10 +215,16 @@ int streamBySocket(int sid)
 int gethostbyname(const char *host)
 {
     dnrImpl dnr = {.host = host, .err = -1, .attempts = 4, .wid = createWaitCond("dnr_work")};
+    int pid = getpid();
+
+
+    enterProcessCriticalCode(pid);
 
     SUBPROC(gethostbyname_impl, &dnr);
     waitCondition(dnr.wid);
     destroyWaitCond(dnr.wid);
+
+    leaveProcessCriticalCode(pid);
     return dnr.ip;
 }
 
@@ -354,6 +358,7 @@ int socket(int af, int type, int protocol)
     } SocketImpl;
 
     SocketImpl impl = {.af = (af == AF_INET? AF_UNIX : af), .type = type, .protocol = protocol, .ret = 0};
+    int pid = getpid();
 
     void socket_i(SocketImpl *i)
     {
@@ -361,17 +366,22 @@ int socket(int af, int type, int protocol)
         NU_Release_Semaphore(&i->wait);
     }
 
+    enterProcessCriticalCode(pid);
 
     NU_Create_Semaphore(&impl.wait, (CHAR*)"sock", 0, NU_PRIORITY);
     SUBPROC(socket_i, &impl);
     NU_Obtain_Semaphore(&impl.wait, NU_SUSPEND);
     NU_Delete_Semaphore(&impl.wait);
 
+    leaveProcessCriticalCode(pid);
+
     if(impl.ret > -1) {
+        enterProcessCriticalCode(pid);
         int iofd = open_fd();
         idStream *s = getStreamData(iofd);
         if(!s) {
             _sclose(impl.ret);
+            leaveProcessCriticalCode(pid);
             return -1;
         }
 
@@ -390,6 +400,7 @@ int socket(int af, int type, int protocol)
         s->close = __close;
         s->flush = __flush;
         s->lseek = __lseek;
+        leaveProcessCriticalCode(pid);
         return iofd;
     }
 
@@ -409,12 +420,12 @@ int connect(int sock, struct sockaddr *name, int namelen)
         int err;
     } ConnectImpl;
 
-    CoreSocket *_sock;
+
     idStream *s = getStreamData(sock);
     if(!s || s->id < 0)
         return -1;
 
-    _sock = getSocketData(s->fd);
+    CoreSocket *_sock = getSocketData(s->fd);
     if(!_sock || _sock->fd < 0)
         return -1;
 
@@ -422,26 +433,36 @@ int connect(int sock, struct sockaddr *name, int namelen)
         return ER_CS_STATE;
 
     _sock->state = SS_CONNECTING;
+    int pid = getpid();
 
     // костыль для AF_INET
     if(name->sa_family == 2)
         name->sa_family = AF_UNIX;
 
-    ConnectImpl impl = {.s = streamBySocket(s->fd), .name = name, .namelen = namelen, .err = 0};
+    ConnectImpl impl = {.s = _sock->fd, .name = name, .namelen = namelen, .err = 0};
 
     void connect_i(ConnectImpl *i)
     {
-        i->err = __connect(i->s, (SOCK_ADDR *)i->name, i->namelen);
-        if(i->err)
-            _sock->state = SS_NONE;
+        SOCK_ADDR *sa = (SOCK_ADDR *)i->name;
+        sa->unk1 = 0;
+        sa->unk2 = 0;
+
+        i->err = __connect(i->s, sa, i->namelen);
         NU_Release_Semaphore(&i->wait);
     }
 
+
+    enterProcessCriticalCode(pid);
 
     NU_Create_Semaphore(&impl.wait, (CHAR*)"sock", 0, NU_PRIORITY);
     SUBPROC(connect_i, &impl);
     NU_Obtain_Semaphore(&impl.wait, NU_SUSPEND);
     NU_Delete_Semaphore(&impl.wait);
+
+    if(impl.err)
+        _sock->state = SS_NONE;
+
+    leaveProcessCriticalCode(pid);
     return impl.err;
 }
 
@@ -461,6 +482,7 @@ int _sclose(int fd)
     } SocketImpl;
 
     SocketImpl impl = {.sock = sock->fd, .err = 0};
+    int pid = getpid();
 
     void socket_i(SocketImpl *i)
     {
@@ -468,7 +490,10 @@ int _sclose(int fd)
         NU_Release_Semaphore(&i->wait);
     }
 
-    printf("socket close\n");
+    //printf("socket close\n");
+
+    enterProcessCriticalCode(pid);
+    //printf("entered critical code\n");
 
     NU_Create_Semaphore(&impl.wait, (CHAR*)"sock", 0, NU_PRIORITY);
     SUBPROC(socket_i, &impl);
@@ -480,6 +505,8 @@ int _sclose(int fd)
     removeSocketMessageHandler(sock->id);
     freeSocket(sock->id);
 
+    leaveProcessCriticalCode(pid);
+    //printf("socket closed\n");
     return impl.err;
 }
 
@@ -509,6 +536,7 @@ int _swrite(int fd, const void *data, size_t size, int flag)
     }WriteData;
 
     WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
+    int pid = getpid();
 
     void __write(WriteData *d)
     {
@@ -516,12 +544,20 @@ int _swrite(int fd, const void *data, size_t size, int flag)
         NU_Release_Semaphore(&d->wait);
     }
 
+    // лочим убийство процесса на этом этапе,
+    // так как это может привести к неожиданному исходу
+    //printf("socket write ...\n");
+    enterProcessCriticalCode(pid);
+
+    //printf("socket write entered critical code.\n");
     NU_Create_Semaphore(&d.wait, "write", 0, NU_PRIORITY);
     SUBPROC(__write, &d);
 
     NU_Obtain_Semaphore(&d.wait, NU_SUSPEND);
     NU_Delete_Semaphore(&d.wait);
 
+    leaveProcessCriticalCode(pid);
+    //printf("socket write complete\n");
     return d.ret;
 }
 
@@ -542,6 +578,7 @@ int _sread(int fd, void *data, size_t size, int flag)
         return -2;
     }
 
+
     typedef struct
     {
         NU_SEMAPHORE wait;
@@ -553,11 +590,16 @@ int _sread(int fd, void *data, size_t size, int flag)
     }WriteData;
 
     WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
+    int pid = getpid();
 
+    //printf("socket read ...\n");
     void __read(WriteData *d) {
         d->ret = recv(d->sock, d->data, d->size, d->flag);
         NU_Release_Semaphore(&d->wait);
     }
+
+    enterProcessCriticalCode(pid);
+    //printf("socket read entered critical code.\n");
 
     NU_Create_Semaphore(&d.wait, "read", 0, NU_PRIORITY);
     SUBPROC(__read, &d);
@@ -565,6 +607,8 @@ int _sread(int fd, void *data, size_t size, int flag)
     NU_Obtain_Semaphore(&d.wait, NU_SUSPEND);
     NU_Delete_Semaphore(&d.wait);
 
+    leaveProcessCriticalCode(pid);
+    //printf("socket read complete\n");
     return d.ret;
 }
 
@@ -583,14 +627,14 @@ static void socketMessageHandler(int sid, CSM_RAM *ram, GBS_MSG *msg)
     switch((int)msg->data0)
     {
         case ENIP_SOCK_CONNECTED:
-            printf("ENIP_SOCK_CONNECTED %d\n", sid);
+            //printf("ENIP_SOCK_CONNECTED %d\n", sid);
             sock->state = SS_CONNECTED | SS_CAN_WRITE;
             wakeOneWaitCond(sock->connectedWid);
             break;
 
 
         case ENIP_SOCK_DATA_READ:
-            printf("ENIP_SOCK_DATA_READ %d\n", sid);
+            //printf("ENIP_SOCK_DATA_READ %d\n", sid);
             if( !(sock->state & SS_CAN_READ) && sock->state & SS_CONNECTED )
                 sock->state |= SS_CAN_READ;
 
@@ -599,7 +643,7 @@ static void socketMessageHandler(int sid, CSM_RAM *ram, GBS_MSG *msg)
 
 
         case ENIP_SOCK_REMOTE_CLOSED:
-            printf("ENIP_SOCK_REMOTE_CLOSED %d\n", sid);
+            //printf("ENIP_SOCK_REMOTE_CLOSED %d\n", sid);
             sock->state = SS_DISCONNECTED;
             wakeAllWaitConds(sock->readWid);
             wakeAllWaitConds(sock->connectedWid);
@@ -607,7 +651,7 @@ static void socketMessageHandler(int sid, CSM_RAM *ram, GBS_MSG *msg)
 
 
         case ENIP_SOCK_CLOSED:
-            printf("ENIP_SOCK_CLOSED %d\n", sid);
+            //printf("ENIP_SOCK_CLOSED %d\n", sid);
             sock->state = SS_DISCONNECTED;
             wakeAllWaitConds(sock->readWid);
             wakeAllWaitConds(sock->connectedWid);

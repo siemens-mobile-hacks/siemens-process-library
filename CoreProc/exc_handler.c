@@ -1,6 +1,6 @@
 
-#include "exc_handler.h"
-#include "process.h"
+#include <spl/exc_handler.h>
+#include <spl/process.h>
 
 
 /*
@@ -129,7 +129,7 @@ void AbortCommonHandler(int pid, unsigned long lr, unsigned long cpsr, int type)
     NU_Change_Preemption(NU_PREEMPT);
 
     //Останавливаем текущий таск и всех его потомковых тредов
-    fullSuspendProcess(pid);
+    fullProcessSuspend(pid);
 }
 
 
@@ -202,7 +202,7 @@ void exc_handler_entry()
 
     free(eq);
 
-    //printout("\033[1m\033[31mException: %s\033[0m\n", msg);
+    printf("\033[1m\033[31mException: %s\033[0m\n", msg);
 
     kill(pid, -1);
 

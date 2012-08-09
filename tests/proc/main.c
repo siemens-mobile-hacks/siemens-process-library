@@ -1,8 +1,8 @@
 
-#include <process.h>
-#include <processbridge.h>
-#include <coreevent.h>
-#include <waitcondition.h>
+#include <spl/process.h>
+#include <spl/processbridge.h>
+#include <spl/coreevent.h>
+#include <spl/waitcondition.h>
 
 
 

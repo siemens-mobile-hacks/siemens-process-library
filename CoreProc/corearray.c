@@ -1,5 +1,5 @@
 
-#include "corearray.h"
+#include <spl/corearray.h>
 
 
 void corearray_fill_cached(CoreArray *array, void *fill)
@@ -87,9 +87,10 @@ int corearray_store_cell(CoreArray *array, size_t cell, void *val)
     if(!array->array)
         return -1;
 
-    if(cell >= array->cached)
-        if(corearray_reserve(array, cell+4))
-            return -1;
+    if(cell >= array->size)
+        return -1;
+        //if(corearray_reserve(array, cell+4))
+            //return -1;
 
     array->array[cell] = val;
     return 0;
@@ -153,14 +154,14 @@ int corearray_clear(CoreArray *array, void *clear)
 
 int corearray_lock(CoreArray *array)
 {
-
+    UNUSED(array);
     return 0;
 }
 
 
 int corearray_unlock(CoreArray *array)
 {
-
+    UNUSED(array);
     return 0;
 }
 

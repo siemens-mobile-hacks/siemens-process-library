@@ -32,6 +32,12 @@ void _init()
     void socketsInit();
     socketsInit();
 
+    void queueInit();
+    queueInit();
+
+    void helperProcInit();
+    helperProcInit();
+
     void processInit();
     processInit();
 
@@ -55,6 +61,9 @@ void _init()
 
 void _fini()
 {
+    void csmFini();
+    csmFini();
+
     void asyncPrintFini();
     asyncPrintFini();
 
@@ -78,6 +87,9 @@ void _fini()
 
     void bridgeFini();
     bridgeFini();
+
+    void helperProcFini();
+    helperProcFini();
 
     void NU_ExceptionsDeInit();
     NU_ExceptionsDeInit();

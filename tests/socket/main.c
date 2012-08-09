@@ -2,15 +2,15 @@
 #include <swilib.h>
 #include <usart.h>
 #include <arpa/inet.h>
-#include <process.h>
-#include <coreevent.h>
-#include <waitcondition.h>
-#include <processbridge.h>
+#include <spl/process.h>
+#include <spl/coreevent.h>
+#include <spl/waitcondition.h>
+#include <spl/processbridge.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <thread.h>
-#include <socket.h>
-#include <fs.h>
+#include <spl/thread.h>
+#include <spl/socket.h>
+#include <spl/fs.h>
 
 FILE *debug_fd = 0;
 #undef printf

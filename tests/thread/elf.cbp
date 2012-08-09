@@ -50,7 +50,7 @@
 			<Add library="corecrt" />
 			<Add library="crt_helper" />
 			<Add library="gcc" />
-			<Add library="coreproc" />
+			<Add library="spl" />
 			<Add library="usart" />
 		</Linker>
 		<Unit filename="main.c">

@@ -1,10 +1,10 @@
 
 #include <swilib.h>
-#include "resctl.h"
-#include "corelist.h"
-#include "process.h"
-#include "ioresctl.h"
-#include "io.h"
+#include <spl/resctl.h>
+#include <spl/corelist.h>
+#include <spl/process.h>
+#include <spl/ioresctl.h>
+#include <spl/io.h>
 
 
 
@@ -42,12 +42,15 @@ static void onClose(ResCtlData *data)
     if(!data)
         return;
 
-    CoreList *list = data->data;
+    printf("ioresctl enter \n");
+    CoreList *list = corelist_fork(data->data);
+
     struct CoreListInode *inode;
     corelist_clean_foreach_begin(inode, list->first) {
         if((int)inode->self > -1) {
             printf("\033[1m\033[31mpid: %d - close leak fd: %X\033[0m\n", getpid(), inode->self);
             close((int)inode->self);
+            printf("Close done\n");
         }
         inode->self = (void*)-1;
     }
@@ -55,6 +58,15 @@ static void onClose(ResCtlData *data)
 
     corelist_release(list);
     free(list);
+
+
+    if(((CoreList *)data->data)->first)
+        printf("data list is not fully cleaned!");
+
+    corelist_release(data->data);
+    free(data->data);
+
+    printf("ioresctl leave \n");
 }
 
 

@@ -1,26 +1,26 @@
 
-#include <process.h>
-#include <coreevent.h>
-#include <csm.h>
+#include <spl/process.h>
+#include <spl/coreevent.h>
+#include <spl/csm.h>
 
 
 
 void onCreateCSM(CSM_RAM *ram)
 {
-    printf("%s: pid: %d\n", __FUNCTION__, pid());
+    printf("%s: pid: %d\n", __FUNCTION__, getpid());
 }
 
 
 void onCloseCSM(CSM_RAM *ram)
 {
-    printf("%s: pid: %d\n", __FUNCTION__, pid());
+    printf("%s: pid: %d\n", __FUNCTION__, getpid());
     quit();
 }
 
 
 void onMessageCSM(CSM_RAM *ram, GBS_MSG *msg)
 {
-    printf("%s: pid: %d\n", __FUNCTION__, pid());
+    printf("%s: pid: %d\n", __FUNCTION__, getpid());
 
     printf("msg: %X\n"
            "pid_from: %X\n"

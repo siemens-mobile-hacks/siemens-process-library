@@ -38,7 +38,7 @@
 		<Compiler>
 			<Add option="-marm" />
 			<Add option="-O2" />
-			<Add option="-W" />
+			<Add option="-Wall" />
 			<Add option="-std=gnu99" />
 			<Add option="-D__NO_LIBC" />
 			<Add directory="../../CoreProc" />
@@ -50,7 +50,7 @@
 			<Add library="corecrt" />
 			<Add library="crt_helper" />
 			<Add library="gcc" />
-			<Add library="coreproc" />
+			<Add library="spl" />
 			<Add library="usart" />
 		</Linker>
 		<Unit filename="main.c">

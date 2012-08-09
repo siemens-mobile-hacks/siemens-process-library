@@ -1,10 +1,10 @@
 
 #include <swilib.h>
-#include <process.h>
-#include <coreevent.h>
-#include <csm.h>
-#include <gui.h>
-#include <lcd_primitives.h>
+#include <spl/process.h>
+#include <spl/coreevent.h>
+#include <spl/csm.h>
+#include <spl/gui.h>
+#include <spl/lcd_primitives.h>
 
 
 int csm_id, gui_id;

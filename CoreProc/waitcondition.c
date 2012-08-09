@@ -1,8 +1,8 @@
 
 #include <swilib.h>
 #include <nu_swilib.h>
-#include "process.h"
-#include "waitcondition.h"
+#include <spl/process.h>
+#include <spl/waitcondition.h>
 
 
 typedef struct
@@ -113,7 +113,7 @@ int wakeOneWaitCond(int wid)
 
     if(wc->waiters < 1) {
         wc->waiters--;
-        printf("wakeOneWaitCond: waiters < 1\n");
+        //printf("wakeOneWaitCond: waiters < 1\n");
         return 0;
     }
 

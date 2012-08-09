@@ -1,14 +1,14 @@
 
 #include <swilib.h>
-#include <process.h>
-#include <coreevent.h>
-#include <csm.h>
-#include <gui.h>
-#include <timer.h>
-#include <lcd_primitives.h>
-#include <memctl.h>
+#include <spl/process.h>
+#include <spl/coreevent.h>
+#include <spl/csm.h>
+#include <spl/gui.h>
+#include <spl/timer.h>
+#include <spl/lcd_primitives.h>
+#include <spl/memctl.h>
 #include <de/drawing.h>
-#include <processbridge.h>
+#include <spl/processbridge.h>
 
 
 int csm_id, gui_id;

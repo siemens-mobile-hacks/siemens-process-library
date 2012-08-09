@@ -1,9 +1,10 @@
 
 #include <swilib.h>
 #include <nu_swilib.h>
-#include "coreevent.h"
-#include "process.h"
-#include "gbs_tweak.h"
+#include <spl/coreevent.h>
+#include <spl/process.h>
+#include <spl/memctl.h>
+#include <spl/gbs_tweak.h>
 
 
 
@@ -12,7 +13,7 @@ extern int entry(int, char **);
 char *strdup(const char *str)
 {
     size_t sz = strlen(str);
-    char *r = malloc(sz+1);
+    char *r = memoryAlloc(getpid(), sz+1);
 
     if(r) {
         memcpy(r, str, sz);

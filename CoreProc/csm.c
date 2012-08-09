@@ -1,9 +1,11 @@
 
 #include <swilib.h>
-#include "coreevent.h"
-#include "process.h"
-#include "csm.h"
-#include "gui.h"
+#include <spl/coreevent.h>
+#include <spl/process.h>
+#include <spl/csm.h>
+#include <spl/gui.h>
+#include <spl/mutex.h>
+
 
 
 typedef struct {
@@ -38,22 +40,22 @@ typedef struct {
            ((CoreCSM *)csmram->constr)
 
 static CoreCSM csm_list[128];
-/*
-static struct {
-    NU_QUEUE queue;
-    void* mem[16];
-}commander;
-*/
+static CoreMutex mutex;
 
 void csmInit()
 {
-    //NU_Create_Queue(&commander.queue, "csm", commander.mem, sizeof(commander.mem)/4, NU_FIXED_SIZE, 8, NU_FIFO);
+    createMutex(&mutex);
     for(int i=0; i<128; ++i) {
         csm_list[i].id = -1;
         csm_list[i].used = 0;
     }
 }
 
+
+void csmFini()
+{
+    destroyMutex(&mutex);
+}
 
 
 static CoreCSM *getCoreCSMData(int id)
@@ -65,6 +67,7 @@ static CoreCSM *getCoreCSMData(int id)
 }
 
 
+
 static int find_best_id()
 {
     for(int i=0; i<128; ++i)
@@ -73,6 +76,37 @@ static int find_best_id()
     return -1;
 }
 
+
+static int new_csm_id()
+{
+    lockMutex(&mutex);
+    int id = find_best_id();
+    CoreCSM *c = getCoreCSMData(id);
+
+    if(!c) {
+        unlockMutex(&mutex);
+        return -1;
+    }
+
+    c->id = id;
+    unlockMutex(&mutex);
+    return id;
+}
+
+
+static int free_csm_id(int id)
+{
+    CoreCSM *c = getCoreCSMData(id);
+
+    if(!c || c->id != id) {
+        return -1;
+    }
+
+    c->id = -1;
+    c->pid = -1;
+    c->used = 0;
+    return 0;
+}
 
 
 void core_csm_create(CSM_RAM *data)
@@ -111,8 +145,7 @@ void core_csm_destroy(CSM_RAM *data)
     CoreCSM *c = getCoreCSMFormRam(data);
 
     if(!c->onClose) {
-        c->pid = -1;
-        c->id = -1;
+        free_csm_id(c->id);
         return;
     }
 
@@ -125,8 +158,7 @@ void core_csm_destroy(CSM_RAM *data)
     memcpy(&event.cram, data, sizeof *data);
 
     sendEvent(c->pid, &event, sizeof event);
-    c->pid = -1;
-    c->id = -1;
+    free_csm_id(c->id);
 }
 
 
@@ -167,8 +199,11 @@ int csmCreate(const char *name, int type,
               void (*onClose)(CSM_RAM *),
               void (*onMessage)(CSM_RAM *, GBS_MSG *))
 {
-    int id;
-    CoreCSM *data = getCoreCSMData((id = find_best_id()));
+    int pid = getpid();
+    enterProcessCriticalCode(pid);
+
+    int id = new_csm_id();
+    CoreCSM *data = getCoreCSMData(id);
     if(!data)
         return -1;
 
@@ -222,13 +257,15 @@ int csmCreate(const char *name, int type,
     if(data->csmID < 0) {
         data->used = 0;
         id = -1;
+        free_csm_id(id);
     } else {
         data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))csmClose, (void *)id, 0);
         NU_Sleep(15); // хак, если сразу вызвать клосксм - он не убивается,
                       // а это может понадобится если процесс умрёт не естественной смертью сразу после создания.
     }
+    leaveProcessCriticalCode(pid);
 
-    return (data->id = id);
+    return id;
 }
 
 

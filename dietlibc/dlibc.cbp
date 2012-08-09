@@ -45,13 +45,14 @@
 			<Add option="-D__arm__" />
 			<Add directory="src/include" />
 			<Add directory="src" />
+			<Add directory="../CoreProc" />
 		</Compiler>
 		<Linker>
 			<Add option="-s" />
 			<Add option="--defsym __ex=0" />
 			<Add library="crt_helper" />
 			<Add library="gcc" />
-			<Add library="coreproc" />
+			<Add library="spl" />
 		</Linker>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />

@@ -1,6 +1,6 @@
 
 #include <swilib.h>
-#include "gbs_tweak.h"
+#include <spl/gbs_tweak.h>
 
 /*
 

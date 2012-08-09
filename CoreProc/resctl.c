@@ -1,6 +1,6 @@
 
 #include <swilib.h>
-#include "resctl.h"
+#include <spl/resctl.h>
 
 
 typedef struct

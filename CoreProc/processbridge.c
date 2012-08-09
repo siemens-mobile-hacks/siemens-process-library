@@ -1,8 +1,8 @@
 
 #include <swilib.h>
 #include <nu_swilib.h>
-#include "processbridge.h"
-
+#include <spl/processbridge.h>
+#include <spl/process.h>
 
 void MopiBridgeMessenger();
 
@@ -86,6 +86,7 @@ void MopiBridgeMessenger()
                 switch(pcnt)
                 {
                     case 0:
+                        pret = ptr_func(0);
                         break;
 
                     case 1:
@@ -210,18 +211,35 @@ void *BridgeMessageSend(void *func_ptr, int type, void *packed_args)
     return ret;
 }
 
+#if 0
+    if(GBS_GetCurCepid() != 0xFFFF) {
+        return (ret_type)func(__VA_ARGS__);
+    }
+#endif
 
 #define SafeProcessRun(func, ret_type, run_type, args_cnt, ...)         \
-    if(GBS_GetCurCepid() == -1) {                                   \
+    if(GBS_GetCurCepid() != (unsigned short)-1) {                                   \
         return (ret_type)func(__VA_ARGS__);                             \
     }                                                                   \
-    void *args = pack_args(args_cnt, __VA_ARGS__);                      \
-    void *retrn = BridgeMessageSend((void *)func, run_type, args);\
+    void *args = pack_args(args_cnt, ##__VA_ARGS__);                      \
+    void *retrn = BridgeMessageSend((void *)func, run_type, args);      \
     return (ret_type)retrn;
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)x)
 #endif
+
+void my_test() {
+    char d[64];
+    sprintf(d, "CepID: %X\n", GBS_GetCurCepid());
+    ShowMSG(1, (int)d);
+}
+
+void sync_test()
+{
+    SafeProcessRun(my_test, void, NU_SYNCHRONIZED_PROC, 0, 0);
+}
+
 
 void _sync_ShowMSG(int type, int lang)
 {

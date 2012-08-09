@@ -19,6 +19,8 @@ CoreProc/gbs_tweak.c -text
 CoreProc/gbs_tweak.h -text
 CoreProc/gui.c -text
 CoreProc/gui.h -text
+CoreProc/helperproc.c -text
+CoreProc/helperproc.h -text
 CoreProc/io.c -text
 CoreProc/io.h -text
 CoreProc/ioresctl.c -text
@@ -34,6 +36,7 @@ CoreProc/process.c -text
 CoreProc/process.h -text
 CoreProc/processbridge.c -text
 CoreProc/processbridge.h -text
+CoreProc/queue.c -text
 CoreProc/resctl.c -text
 CoreProc/resctl.h -text
 CoreProc/socket.c -text
@@ -284,6 +287,29 @@ dietlibc/src/wchar/wcsncpy.c -text
 dietlibc/src/wchar/wcspbrk.c -text
 dietlibc/src/wchar/wcsrchr.c -text
 dietlibc/src/wchar/wcsstr.c -text
+include/spl/async_print.h -text
+include/spl/corearray.h -text
+include/spl/coreevent.h -text
+include/spl/corelist.h -text
+include/spl/csm.h -text
+include/spl/exc_handler.h -text
+include/spl/fs.h -text
+include/spl/gbs_tweak.h -text
+include/spl/gui.h -text
+include/spl/io.h -text
+include/spl/ioresctl.h -text
+include/spl/lcd_primitives.h -text
+include/spl/memctl.h -text
+include/spl/mutex.h -text
+include/spl/process.h -text
+include/spl/processbridge.h -text
+include/spl/queue.h -text
+include/spl/resctl.h -text
+include/spl/socket.h -text
+include/spl/task.h -text
+include/spl/thread.h -text
+include/spl/timer.h -text
+include/spl/waitcondition.h -text
 libnucrt/__cxa_atexit.cpp -text
 libnucrt/crt_helper/__cxa_atexit.cpp -text
 libnucrt/crt_helper/crt_helper.cbp -text svneol=unset#application/xml
