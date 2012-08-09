@@ -327,10 +327,14 @@ tests/layer_tests/elf.cbp -text svneol=unset#application/xml
 tests/layer_tests/main.c -text
 tests/layer_tests/memset64.S -text
 tests/layer_tests/text.c -text
+tests/mutexes-stress-test/elf.cbp -text svneol=unset#application/xml
+tests/mutexes-stress-test/main.c -text
 tests/mutexes/elf.cbp -text svneol=unset#application/xml
 tests/mutexes/main.c -text
 tests/proc/elf.cbp -text svneol=unset#application/xml
 tests/proc/main.c -text
+tests/socket-stress-test/elf.cbp -text svneol=unset#application/xml
+tests/socket-stress-test/main.c -text
 tests/socket/elf.cbp -text svneol=unset#application/xml
 tests/socket/main.c -text
 tests/thread/elf.cbp -text svneol=unset#application/xml
