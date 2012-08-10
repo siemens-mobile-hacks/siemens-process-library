@@ -179,7 +179,7 @@ static void kill_process(int _pid)
     NU_Terminate_Task(proc->t.task);
     NU_Delete_Task(proc->t.task);
 
-    destroyMutex(&proc->critical_code);
+    destroyMutex(&proc->critical_code.mutex);
 
     if(proc->t.is_stack_freeable)
         free(proc->t.stack);
@@ -197,11 +197,12 @@ static void kill_process(int _pid)
     freeCoreProcessData(_pid);
 }
 
-
+/*
 static void kill_process_fake()
 {
 
 }
+*/
 
 static void kill_impl(int _pid, int code, int lock)
 {
@@ -212,8 +213,11 @@ static void kill_impl(int _pid, int code, int lock)
     proc->terminated = 2;
     proc->retcode = code;
 
-    if(lock)
-        lockMutex(&proc->critical_code);
+    if(lock) {
+        lockMutex(&proc->critical_code.mutex);
+        proc->critical_code.pid = getpid();
+        proc->critical_code.tid = gettid();
+    }
 
     int wc = proc->exit_wait_cond;
     proc->exit_wait_cond = -1;
@@ -361,7 +365,10 @@ void kill(int _pid, int code)
         if(proc->t.id < 0 || proc->terminated)
             return;
 
-        lockMutex(&proc->critical_code);
+        lockMutex(&proc->critical_code.mutex);
+        proc->critical_code.pid = getpid();
+        proc->critical_code.tid = gettid();
+
         proc->kill_mode = 1;
         proc->terminated = 1;
         proc->retcode = code;
@@ -427,7 +434,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
         return -3;
     }
 
-    if(createMutex(&proc->critical_code)) {
+    if(createMutex(&proc->critical_code.mutex)) {
         freeCoreProcessData(proc->t.id);
         return -1;
     }
@@ -440,7 +447,8 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
 
     NU_TASK *task = malloc(sizeof *task);
     memset(task, 0, sizeof *task);
-    proc->critical_locks = 0;
+    proc->critical_code.locks = 0;
+    proc->critical_code.pid = proc->critical_code.tid = -1;
     proc->t.task = task;
     proc->t.stack = stack;
     proc->t.stack_size = stack_size;
@@ -468,7 +476,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
             free(proc->argv[proc->argc]);
         free(argv);
 
-        destroyMutex(&proc->critical_code);
+        destroyMutex(&proc->critical_code.mutex);
 
         freeCoreProcessData(_pid);
         //char d[128];
@@ -742,13 +750,31 @@ int enterProcessCriticalCode(int pid)
     if(!proc || proc->t.id != pid)
         return -1;
 
-    if(proc->terminated == 2)
-        return -2;
+    /*if(proc->terminated == 2)
+        return -2;*/
 
-    proc->critical_locks++;
-    if(proc->critical_locks == 1)
-        lockMutex(&proc->critical_code);
+    proc->critical_code.locks++;
+    if(proc->critical_code.locks == 1) {
 
+        // если мы уже залочили тред
+        if(proc->critical_code.tid > -1){
+            // и опять его же лочим
+            if(proc->critical_code.tid == gettid())
+                // то выходим нафиг
+                return 0;
+        }
+        // если тред не лочили, а лочили процесс
+        else if(proc->critical_code.pid > -1){
+            // и опять его же лочим
+            if(proc->critical_code.pid == getpid())
+                // то выходим нафиг
+                return 0;
+        }
+
+        lockMutex(&proc->critical_code.mutex);
+        proc->critical_code.pid = getpid();
+        proc->critical_code.tid = gettid();
+    }
 
     return 0;
 }
@@ -760,17 +786,28 @@ int leaveProcessCriticalCode(int pid)
     if(!proc || proc->t.id != pid)
         return -1;
 
-    if(proc->terminated == 2)
-        return -2;
+    /*if(proc->terminated == 2)
+        return -2;*/
 
-    proc->critical_locks --;
-    if(proc->critical_locks <= 0)
-        unlockMutex(&proc->critical_code);
+    proc->critical_code.locks --;
+    if(proc->critical_code.locks <= 0) {
+        unlockMutex(&proc->critical_code.mutex);
+        proc->critical_code.pid = -1;
+        proc->critical_code.tid = -1;
+    }
+
     return 0;
 }
 
 
+int isProcessKilling(int pid)
+{
+    CoreProcess *proc = coreProcessData(pid);
+    if(!proc || proc->t.id != pid)
+        return -1;
 
+    return proc->terminated > 0;
+}
 
 
 

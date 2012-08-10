@@ -183,6 +183,8 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
 {
     int pid = getpid();
     enterProcessCriticalCode(pid);
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
     short id;
     CoreThread *thread = newCoreThreadData();

@@ -56,99 +56,77 @@
 		<Unit filename="async_print.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="async_print.h" />
 		<Unit filename="corearray.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="corearray.h" />
-		<Unit filename="coreevent.h" />
 		<Unit filename="corelist.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="corelist.h" />
 		<Unit filename="csm.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="csm.h" />
 		<Unit filename="exc_handler.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="exc_handler.h" />
 		<Unit filename="exc_vectors.s" />
 		<Unit filename="fs.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="fs.h" />
 		<Unit filename="gbs_tweak.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="gbs_tweak.h" />
 		<Unit filename="gui.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="gui.h" />
 		<Unit filename="helperproc.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="io.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="io.h" />
 		<Unit filename="ioresctl.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="ioresctl.h" />
 		<Unit filename="lcd_primitives.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="lcd_primitives.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="memctl.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="memctl.h" />
 		<Unit filename="mutex.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="mutex.h" />
 		<Unit filename="process.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="process.h" />
 		<Unit filename="processbridge.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="processbridge.h" />
 		<Unit filename="queue.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="resctl.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="resctl.h" />
 		<Unit filename="socket.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="socket.h" />
 		<Unit filename="system.s" />
 		<Unit filename="task.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="task.h" />
 		<Unit filename="thread.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="thread.h" />
 		<Unit filename="timer.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="timer.h" />
 		<Unit filename="waitcondition.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="waitcondition.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />

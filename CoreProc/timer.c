@@ -86,6 +86,8 @@ int timerStart(unsigned long time, void (*callback)(int))
 
     int pid = getpid();
     enterProcessCriticalCode(pid);
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
     struct TimerData *timer = &timers[id];
 

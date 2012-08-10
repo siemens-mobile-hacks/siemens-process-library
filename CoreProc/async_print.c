@@ -56,13 +56,19 @@ void asyncPrintFini()
 
 void printLock()
 {
-   lockMutex(&mutex);
+    if(!GetPeripheryState (2, 4)) {
+        return;
+    }
+    lockMutex(&mutex);
 }
 
 
 void printUnLock()
 {
-   unlockMutex(&mutex);
+    if(!GetPeripheryState (2, 4)) {
+        return;
+    }
+    unlockMutex(&mutex);
 }
 
 

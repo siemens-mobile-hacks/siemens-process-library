@@ -200,6 +200,9 @@ int csmCreate(const char *name, int type,
               void (*onMessage)(CSM_RAM *, GBS_MSG *))
 {
     int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
+
     enterProcessCriticalCode(pid);
 
     int id = new_csm_id();

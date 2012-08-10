@@ -304,6 +304,9 @@ int guiCreate(RECT *canvas,
                void *userdata)
 {
     int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
+
     enterProcessCriticalCode(pid);
 
     int id = new_gui_id();

@@ -217,6 +217,8 @@ int gethostbyname(const char *host)
     dnrImpl dnr = {.host = host, .err = -1, .attempts = 4, .wid = createWaitCond("dnr_work")};
     int pid = getpid();
 
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
     enterProcessCriticalCode(pid);
 
@@ -359,6 +361,8 @@ int socket(int af, int type, int protocol)
 
     SocketImpl impl = {.af = (af == AF_INET? AF_UNIX : af), .type = type, .protocol = protocol, .ret = 0};
     int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
     void socket_i(SocketImpl *i)
     {
@@ -432,9 +436,11 @@ int connect(int sock, struct sockaddr *name, int namelen)
     if( !(_sock->state & SS_SOCKET_CREATED) )
         return ER_CS_STATE;
 
-    _sock->state = SS_CONNECTING;
     int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
+    _sock->state = SS_CONNECTING;
     // костыль для AF_INET
     if(name->sa_family == 2)
         name->sa_family = AF_UNIX;
@@ -537,6 +543,8 @@ int _swrite(int fd, const void *data, size_t size, int flag)
 
     WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
     int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
 
     void __write(WriteData *d)
     {
@@ -568,6 +576,10 @@ int _sread(int fd, void *data, size_t size, int flag)
     if(!sock || sock->id < 0)
         return -1;
 
+    int pid = getpid();
+    if(isProcessKilling(pid) == 1)
+        return -1;
+
     if( !(sock->state & SS_CONNECTED) ) {
         return -1;
     }
@@ -590,7 +602,7 @@ int _sread(int fd, void *data, size_t size, int flag)
     }WriteData;
 
     WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
-    int pid = getpid();
+
 
     //printf("socket read ...\n");
     void __read(WriteData *d) {
