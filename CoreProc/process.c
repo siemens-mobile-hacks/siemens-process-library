@@ -33,6 +33,27 @@ void processInit()
 
 void processFini()
 {
+    char name[64];
+    unsigned char status, prio, preemt;
+    unsigned long sched_cnt, time_slice, stack_sz, min_stack;
+    void *stack_base;
+
+    for(int i =0; i<MAX_PROCESS_ID; ++i) {
+
+        if(!core_process[i].t.task)
+            continue;
+
+        int err = NU_Task_Information(core_process[i].t.task, name, &status, &sched_cnt, &prio,
+                            &preemt, &time_slice, &stack_base, &stack_sz, &min_stack);
+
+        if(err == NU_SUCCESS) {
+            char d[128];
+            sprintf(d, "Task '%s' not killed", name);
+            ShowMSG(1, (int)d);
+        }
+    }
+
+
     destroyMutex(&pb_mutex);
 }
 
@@ -175,17 +196,31 @@ static void kill_process(int _pid)
     if(!proc || proc->t.id != _pid)
         return;
 
+    int err = 0, ex_wc = proc->exit_wait_cond;
+
+    proc->exit_wait_cond = -1;
+
     NU_Suspend_Task(proc->t.task);
-    NU_Terminate_Task(proc->t.task);
-    NU_Delete_Task(proc->t.task);
+    if( NU_Terminate_Task(proc->t.task) != NU_SUCCESS) {
+        printf("Cant kill task! %d\n", _pid);
+        ShowMSG(1, (int)"Немогу убить таск!");
+    }
+
+    if( (err = NU_Delete_Task(proc->t.task)) != NU_SUCCESS) {
+        printf("Cant delete task! %d\n", _pid);
+        ShowMSG(1, (int)"Немогу удалить таск!");
+    }
 
     destroyMutex(&proc->critical_code.mutex);
 
-    if(proc->t.is_stack_freeable)
-        free(proc->t.stack);
+    if(!err) {
+        if(proc->t.is_stack_freeable)
+            free(proc->t.stack);
+        proc->t.stack = 0;
 
-    free(proc->t.task);
-    proc->t.task = 0;
+        free(proc->t.task);
+        proc->t.task = 0;
+    }
 
     if(proc->kostil.kik)
         proc->kostil.kik(proc->kostil.d);
@@ -195,88 +230,136 @@ static void kill_process(int _pid)
     //NU_Sleep(30);
     //SetVibration(0);
     freeCoreProcessData(_pid);
+
+    wakeAllWaitConds(ex_wc);
+    destroyWaitCond(ex_wc);
 }
 
-/*
-static void kill_process_fake()
-{
-
-}
-*/
 
 static void kill_impl(int _pid, int code, int lock)
 {
+    printf("%s(%d, %d, %d)\n", __FUNCTION__, _pid, code, lock);
     CoreProcess *proc = coreProcessData(_pid);
-    if(!proc || proc->t.id != _pid || proc->terminated == 2)
+    if(!proc || proc->t.id != _pid)
         return;
+
+    /*if(!proc->hisr_call)
+        proc->hisr_call = NU_Current_Task_Pointer() == ? 1 : 0;*/
+
+    if(!proc->hisr_call) {
+        if(proc->terminated == 2)
+            return;
+    } else
+         printf("Hisr killing...\n");
+
+
 
     proc->terminated = 2;
     proc->retcode = code;
+    proc->kill_tryes ++;
 
-    if(lock) {
-        lockMutex(&proc->critical_code.mutex);
-        proc->critical_code.pid = getpid();
-        proc->critical_code.tid = gettid();
+    printf("Try number %d\n Kill state: %d\n", proc->kill_tryes, proc->kill_state);
+
+    // безнадёжный процесс...
+    if(proc->kill_tryes > 14) {
+        return;
     }
 
-    int wc = proc->exit_wait_cond;
-    proc->exit_wait_cond = -1;
-    wakeAllWaitConds(wc);
-    destroyWaitCond(wc);
-
-
-    NU_Delete_Queue(proc->t.events);
-    free(proc->t.mem);
-    proc->t.events = 0;
-    proc->t.mem = 0;
-
-    while(--proc->argc > -1)
-        free(proc->argv[proc->argc]);
-    free(proc->argv);
-
-    struct CoreListInode *inode = proc->threads.list.first;
-    while(inode)
-    {
-        int tid = (int)inode->self;
-        destroyThread(tid);
-
-        if(inode != proc->threads.list.first)
-            inode = proc->threads.list.first;
-        else
-            inode = inode->next;
-    }
-
-    printf("Dtors run\n");
-
-    TorsList *val;
-    CoreArray *array = &proc->dtors;
-    int i = 0;
-    corearray_foreach(TorsList *, val, array, i) {
-        corearray_store_cell(array, i, NULL);
-
-        if(val) {
-            val->h(val->d[0], val->d[1]);
-            free(val);
+    printf("State: 0\n");
+    if(proc->kill_state == 0) {
+        if(lock) {
+            lockMutex(&proc->critical_code.mutex);
+            proc->critical_code.pid = getpid();
+            proc->critical_code.tid = gettid();
         }
+        proc->kill_state = 1;
     }
 
-    printf("Dtors complete\n");
 
-    corearray_release(&proc->ctors);
-    corearray_release(&proc->dtors);
-    corearray_release(&proc->idUsersData);
+    printf("State: 1\n");
+    if(proc->kill_state == 1) {
+        NU_Delete_Queue(proc->t.events);
+        free(proc->t.mem);
+        proc->t.events = 0;
+        proc->t.mem = 0;
+        proc->kill_state ++;
+    }
 
-    printf("detachResCtl ...\n");
-    detachResCtl(_pid, &proc->resData, proc->resAttached);
-    printf("detachResCtl complete!\n");
+    printf("State: 2\n");
+    if(proc->kill_state == 2) {
+        while(--proc->argc > -1)
+            free(proc->argv[proc->argc]);
+        free(proc->argv);
+        proc->kill_state++;
+    }
 
-    if(proc->name)
-        free(proc->name);
+    printf("State: 3\n");
+    if(proc->kill_state == 3) {
+        struct CoreListInode *inode = proc->threads.list.first;
+        while(inode)
+        {
+            int tid = (int)inode->self;
+            printf("Destroying thread %d...\n", tid);
+            destroyThread(tid);
+            printf("Thread %d destroyed\n", tid);
 
-    printf("kill_process(%d)\n", _pid);
+            if(inode != proc->threads.list.first)
+                inode = proc->threads.list.first;
+            else
+                inode = inode->next;
+        }
+        proc->kill_state++;
+    }
 
-    SUBPROC(kill_process, _pid);
-    //helperproc_schedule((void *)kill_process, (void *)_pid, 0, 0);
+
+    printf("State: 4\n");
+    if(proc->kill_state == 4) {
+        printf("Dtors run\n");
+        TorsList *val;
+        CoreArray *array = &proc->dtors;
+        int i = 0;
+        corearray_foreach(TorsList *, val, array, i) {
+            corearray_store_cell(array, i, NULL);
+
+            if(val) {
+                val->h(val->d[0], val->d[1]);
+                free(val);
+            }
+        }
+        proc->kill_state++;
+        printf("Dtors complete\n");
+    }
+
+    printf("State: 5\n");
+    if(proc->kill_state == 5) {
+        corearray_release(&proc->ctors);
+        corearray_release(&proc->dtors);
+        corearray_release(&proc->idUsersData);
+        proc->kill_state ++;
+    }
+
+    printf("State: 6\n");
+    if(proc->kill_state == 6) {
+        printf("detachResCtl ...\n");
+        detachResCtl(_pid, &proc->resData, proc->resAttached);
+        printf("detachResCtl complete!\n");
+        proc->kill_state ++;
+    }
+
+    if(proc->name) {
+        void *d = proc->name;
+        proc->name = 0;
+        free(d);
+    }
+
+    printf("State: 7 : %d\n", proc->kill_state);
+    if(proc->kill_state == 7) {
+        printf("kill_process(%d)\n", _pid);
+        SUBPROC(kill_process, _pid);
+        proc->kill_state ++;
+    }
+
+    helperproc_schedule((void *)kill_process, (void *)_pid, 0, 0);
 
     while(1)
         NU_Sleep(30);
@@ -352,31 +435,50 @@ void quit()
 }
 
 
-void kill(int _pid, int code)
+void kill_hisr_chek(int _pid, int code, int hisr)
 {
+    printf("%s(%d)\n", __FUNCTION__, _pid);
     if(_pid < 0 && _pid >= MAX_PROCESS_ID)
         return;
 
+
     if(_pid == getpid()) { // self kill
         kill_impl(_pid, code, 1);
+
     } else {
 
         CoreProcess *proc = coreProcessData(_pid);
-        if(proc->t.id < 0 || proc->terminated)
+        if(proc->t.id < 0)
             return;
 
-        lockMutex(&proc->critical_code.mutex);
-        proc->critical_code.pid = getpid();
-        proc->critical_code.tid = gettid();
+        if(proc->terminated != 2) {
+            lockMutex(&proc->critical_code.mutex);
+            proc->critical_code.pid = getpid();
+            proc->critical_code.tid = gettid();
+        }
 
+        printf("Finish him!\n");
+
+        proc->hisr_call = hisr;
         proc->kill_mode = 1;
         proc->terminated = 1;
         proc->retcode = code;
 
-        NU_Terminate_Task(proc->t.task);
-        NU_Reset_Task(proc->t.task, _pid, proc);
-        NU_Resume_Task(proc->t.task);
+        int r = NU_Terminate_Task(proc->t.task);
+        printf("Term: %d\n", r);
+
+        r = NU_Reset_Task(proc->t.task, _pid, proc);
+        printf("Reset: %d\n", r);
+
+        r = NU_Resume_Task(proc->t.task);
+        printf("Resume: %d\n", r);
     }
+}
+
+
+void kill(int _pid, int code)
+{
+    kill_hisr_chek(_pid, code, 0);
 }
 
 
@@ -442,6 +544,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     int prio = conf->prio? conf->prio : DEFAULT_PRIO;
     int stack_size = conf->stack_size? conf->stack_size : DEFAULT_STACK_SIZE;
     void *stack = conf->stack? conf->stack : malloc(stack_size);
+    conf->is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
     short _pid = proc->t.id;
     int err = 0;
 
@@ -455,11 +558,14 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     proc->argc = argc;
     proc->argv = argv;
     proc->t.type = 1;
-    proc->t.is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
+    proc->t.is_stack_freeable = conf->is_stack_freeable;
     proc->ppid = getpid();
     proc->name = strdup(name);
     proc->main = _main;
     proc->retcode = 0;
+    proc->hisr_call = 0;
+    proc->kill_state = 0;
+    proc->kill_tryes = 0;
 
 
     if( (err = NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
@@ -488,8 +594,8 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     corearray_init(&proc->ctors, NULL);
     corearray_init(&proc->dtors, NULL);
 
-    proc->start_wait_cond = createWaitCond("proc_wait");
-    proc->exit_wait_cond = createWaitCond("proc_wait");
+    proc->start_wait_cond = createAdvWaitCond("proc_wait", 0);
+    proc->exit_wait_cond = createAdvWaitCond("proc_wait", 0);
 
     if(run)
         NU_Resume_Task(task);
@@ -637,7 +743,7 @@ int addProcessCtors(int _pid, void (*h)(void *, void *), void *data1, void *data
 int addProcessDtors(int _pid, void (*h)(void *, void *), void *data1, void *data2)
 {
     CoreProcess *proc = coreProcessData(_pid);
-    if(!proc || proc->t.id < 0)
+    if(!proc || proc->t.id != _pid)
         return -1;
 
     return addProcessTors(&proc->dtors, h, data1, data2);
@@ -670,7 +776,7 @@ struct CoreListInode *addProcessThread(int _pid, int tid)
 int delProcessThread(int _pid, struct CoreListInode *inode)
 {
     CoreProcess *proc = coreProcessData(_pid);
-    if(!proc || proc->t.id < 0)
+    if(!proc || proc->t.id < 0 || !inode)
         return -1;
 
     corelist_del_inode(&proc->threads.list, inode);

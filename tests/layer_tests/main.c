@@ -155,7 +155,7 @@ void onKeyGUI(int id, GUI_MSG *msg)
         switch(msg->gbsmsg->submess)
         {
             case RIGHT_SOFT:
-                guiClose(id);
+                closeGUI(id);
                 return;
         }
     }
@@ -166,14 +166,14 @@ void onKeyGUI(int id, GUI_MSG *msg)
 
 
 
-void onCreateCSM(CSM_RAM *ram)
+void onCreateCSM(int id, CSM_RAM *ram)
 {
     canvas.x = 0;
     canvas.y = 0;
     canvas.x2 = ScreenW();
     canvas.y2 = ScreenH();
 
-    gui_id = guiCreate(&canvas, onRedrawGUI,
+    gui_id = createGUI(&canvas, onRedrawGUI,
                        onCreateGUI,
                        onCloseGUI,
                        onFocusGUI,
@@ -182,11 +182,12 @@ void onCreateCSM(CSM_RAM *ram)
                        NULL);
 
     printf("csm_id: %d | gui_id: %d\n", csm_id, gui_id);
-    csmBindGUI(csm_id, gui_id);
+
+    bindGUIToCSM(csm_id, getGUIid(gui_id));
 }
 
 
-void onCloseCSM(CSM_RAM *ram)
+void onCloseCSM(int id, CSM_RAM *ram)
 {
     quit();
 }
@@ -199,7 +200,7 @@ int main()
     initUsart();
     printf(" [+] main: pid: %d\n", getpid());
 
-    csm_id = csmCreate("test", CoreCSM_GUI, onCreateCSM, onCloseCSM, 0);
+    csm_id = createCSM("test", CoreCSM_GUI, onCreateCSM, onCloseCSM, 0);
 
     processEvents();
     return 0;

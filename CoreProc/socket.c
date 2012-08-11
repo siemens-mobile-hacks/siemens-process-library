@@ -30,11 +30,14 @@ void replace_idle_message_func()
     corearray_init(&sockets_mess_handless, 0);
 
     CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    memcpy(&icsmd, icsm->constr, sizeof(icsmd));
-    old_icsm = (CSM_RAM *)icsm->constr;
-    old_icsm_onMessage = icsmd.onMessage;
-    icsmd.onMessage = IDLECSM_onMessage;
-    icsm->constr = &icsmd;
+    //memcpy(&icsmd, icsm->constr, sizeof(icsmd));
+    //old_icsm = (CSM_RAM *)icsm->constr;
+    //old_icsm_onMessage = icsmd.onMessage;
+    //icsmd.onMessage = IDLECSM_onMessage;
+    //icsm->constr = &icsmd;
+    CSM_DESC *cd = (CSM_DESC *)icsm->constr;
+    old_icsm_onMessage = cd->onMessage;
+    cd->onMessage = IDLECSM_onMessage;
 }
 
 
@@ -42,7 +45,9 @@ void restore_idle_message_func()
 {
     corearray_release(&sockets_mess_handless);
     CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    icsm->constr = (void *)old_icsm;
+    //icsm->constr = (void *)old_icsm;
+    CSM_DESC *cd = (CSM_DESC *)icsm->constr;
+    //cd->onMessage = old_icsm_onMessage;
 }
 
 

@@ -29,4 +29,9 @@ extern void print(int, const char *);
  printLock(); int __sz__ = sprintf(_debug_data, fmt, ##__VA_ARGS__); print(__sz__, _debug_data); printUnLock(); }
 #endif
 
+#ifndef printf_nlock
+#define printf_nlock(fmt, ...) { extern char _debug_data[];  \
+int __sz__ = sprintf(_debug_data, fmt, ##__VA_ARGS__); print(__sz__, _debug_data); }
+#endif
+
 #endif

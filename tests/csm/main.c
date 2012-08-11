@@ -5,20 +5,20 @@
 
 
 
-void onCreateCSM(CSM_RAM *ram)
+void onCreateCSM(int id, CSM_RAM *ram)
 {
     printf("%s: pid: %d\n", __FUNCTION__, getpid());
 }
 
 
-void onCloseCSM(CSM_RAM *ram)
+void onCloseCSM(int id, CSM_RAM *ram)
 {
     printf("%s: pid: %d\n", __FUNCTION__, getpid());
     quit();
 }
 
 
-void onMessageCSM(CSM_RAM *ram, GBS_MSG *msg)
+void onMessageCSM(int id, CSM_RAM *ram, GBS_MSG *msg)
 {
     printf("%s: pid: %d\n", __FUNCTION__, getpid());
 

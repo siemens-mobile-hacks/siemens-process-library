@@ -44,7 +44,7 @@ static WaitCondition *getWcData(int wid)
 
 
 
-int createWaitCond(const char *name)
+int createAdvWaitCond(const char *name, int proc_dependence)
 {
     int id = getBestWcID();
     WaitCondition *wc = getWcData(id);
@@ -61,10 +61,17 @@ int createWaitCond(const char *name)
         wc->used = 0;
         return -1;
     } else {
-        wc->dt_id = addProcessDtors(wc->pid, (void*)destroyWaitCond, (void *)id, 0);
+        if(proc_dependence)
+            wc->dt_id = addProcessDtors(wc->pid, (void*)destroyWaitCond, (void *)id, 0);
     }
 
     return id;
+}
+
+
+int createWaitCond(const char *name)
+{
+    return createAdvWaitCond(name, 1);
 }
 
 

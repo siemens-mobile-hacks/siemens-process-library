@@ -51,7 +51,8 @@ char fname[128];
 int flush_buffer = 0;
 
 
-#define thread_stack_size 40*1024
+#define thread_stack_size 300*1024
+char stack_data[thread_stack_size] = {0};
 
 typedef struct
 {
@@ -411,11 +412,15 @@ void onCreateGUI(int id)
 
     queue_handle = createQueue("dec", queue_data, queue_size, NU_FIXED_SIZE, queue_struct_size, NU_FIFO);
 
+
+    memset(stack_data, 0, sizeof stack_data);
     TaskConf config;
     initTaskConf(&config);
 
     config.prio = task_priority;
-    setTaskConfigStackSize(&config, thread_stack_size);
+    config.stack = stack_data;
+    config.is_stack_freeable = 0;
+    config.stack_size = thread_stack_size;
 
     decode_thread = createConfigurableThread(&config, decode_thread_handle, 0, 1);
 
@@ -455,7 +460,7 @@ void onKeyGUI(int id, GUI_MSG *msg)
         switch(msg->gbsmsg->submess)
         {
         case RIGHT_SOFT:
-            guiClose(id);
+            closeGUI(id);
             return;
 
         case '1':
@@ -503,14 +508,14 @@ void onKeyGUI(int id, GUI_MSG *msg)
 
 
 
-void onCreateCSM(CSM_RAM *ram)
+void onCreateCSM(int id, CSM_RAM *ram)
 {
     canvas.x = 0;
     canvas.y = 0;
     scr_w = canvas.x2 = ScreenW();
     scr_h = canvas.y2 = ScreenH();
 
-    gui_id = guiCreate(&canvas, onRedrawGUI,
+    gui_id = createGUI(&canvas, onRedrawGUI,
                        onCreateGUI,
                        onCloseGUI,
                        onFocusGUI,
@@ -518,11 +523,11 @@ void onCreateCSM(CSM_RAM *ram)
                        onKeyGUI,
                        NULL);
 
-    csmBindGUI(csm_id, gui_id);
+    bindGUIToCSM(csm_id, getGUIid(gui_id));
 }
 
 
-void onCloseCSM(CSM_RAM *ram)
+void onCloseCSM(int id, CSM_RAM *ram)
 {
     quit();
 }
@@ -547,7 +552,7 @@ int main(int argc, char **argv)
     void InitConfig();
     InitConfig();
 
-    csm_id = csmCreate("RadioSI", CoreCSM_GUI, onCreateCSM, onCloseCSM, 0);
+    csm_id = createCSM("RadioSI", CoreCSM_GUI, onCreateCSM, onCloseCSM, 0);
 
     processEvents();
     return 0;

@@ -6,7 +6,7 @@
 
 
 
-int guiCreate(RECT *canvas,
+int createGUI(RECT *canvas,
               void (*onRedraw)(int id),
               void (*onCreate)(int id),
               void (*onClose)(int id),
@@ -15,8 +15,8 @@ int guiCreate(RECT *canvas,
               void (*onKey)(int id, GUI_MSG *),
                void *userdata);
 
-int guiClose(int id);
-int guiID(int id);
+int closeGUI(int id);
+int getGUIid(int id);
 
 
 #endif

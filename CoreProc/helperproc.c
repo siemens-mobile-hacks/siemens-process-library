@@ -7,10 +7,15 @@
 #include <spl/memctl.h>
 #include "helperproc.h"
 
-void helperProcInit(){};
-void helperProcFini(){}
 
 #if 0
+void helperProcInit(){}
+void helperProcFini(){}
+void helperproc_schedule(void *func, void *d1, void *d2, void *d3) {
+    SUBPROC(func, d1, d2, d3);
+}
+
+#else
 typedef struct {
     void (*run)(void *, void *, void *);
     void *data[3];
@@ -23,7 +28,7 @@ static NU_TASK helper_task;
 static void helperproc_handle(int argc, void *argv);
 static void *mem = 0;
 static char *stack = 0;
-static int stack_size = 0x2000;
+static int stack_size = 0x4000;
 
 
 void helperProcInit()
@@ -51,13 +56,13 @@ void helperProcFini()
 
 void helperproc_schedule(void *func, void *d1, void *d2, void *d3)
 {
-    volatile helper_data event;
+    helper_data event;
     event.run = func;
     event.data[0] = d1;
     event.data[1] = d2;
     event.data[2] = d3;
 
-    NU_Send_To_Queue(&help_queue, (void*)&event, message_size, NU_SUSPEND);
+    NU_Send_To_Queue(&help_queue, (void*)&event, message_size, NU_NO_SUSPEND);
 }
 
 

@@ -436,6 +436,11 @@ tests/RadioSI/stream.c -text
 tests/RadioSI/stream.h -text
 tests/csm/elf.cbp -text svneol=unset#application/xml
 tests/csm/main.c -text
+tests/editcontrol/editctl.c -text
+tests/editcontrol/editctl.h -text
+tests/editcontrol/elf.cbp -text svneol=unset#application/xml
+tests/editcontrol/main.c -text
+tests/editcontrol/static_data_base.h -text
 tests/gui/elf.cbp -text svneol=unset#application/xml
 tests/gui/main.c -text
 tests/layer_tests/bcopy64.S -text

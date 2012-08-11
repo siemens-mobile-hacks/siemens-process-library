@@ -294,7 +294,7 @@ const void * const coreGUIMethods[11]=
 
 
 
-int guiCreate(RECT *canvas,
+int createGUI(RECT *canvas,
               void (*onRedraw)(int id),
               void (*onCreate)(int id),
               void (*onClose)(int id),
@@ -337,7 +337,7 @@ int guiCreate(RECT *canvas,
         data->id = -1;
         data->cg_id = -1;
     } else {
-        data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))guiClose, (void *)id, 0);
+        data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))closeGUI, (void *)id, 0);
     }
     leaveProcessCriticalCode(pid);
 
@@ -345,7 +345,7 @@ int guiCreate(RECT *canvas,
 }
 
 
-int guiClose(int id)
+int closeGUI(int id)
 {
     CoreGUI *data = getCoreGUIData(id);
     if(!data)
@@ -365,7 +365,7 @@ int guiClose(int id)
 }
 
 
-int guiID(int id)
+int getGUIid(int id)
 {
     CoreGUI *data = getCoreGUIData(id);
     if(!data)

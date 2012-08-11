@@ -10,6 +10,7 @@
 char _debug_data[4*1024];
 static CoreMutex mutex = {.locks = 0};
 int __printh_pid = -1;
+int lock_print = 1;
 static int queue;
 
 
@@ -23,6 +24,10 @@ void initUsart()
      * Найти более продвинутый способ
      * определения шнура.
      */
+
+    if(lock_print)
+        return;
+
     if(!GetPeripheryState (2, 4))
         return;
 
@@ -34,6 +39,9 @@ void initUsart()
 
 void asyncPrintInit()
 {
+    if(lock_print)
+        return;
+
     createMutex(&mutex);
 
     extern int print_handle(int, char**);
@@ -43,19 +51,27 @@ void asyncPrintInit()
 
 void asyncPrintFini()
 {
+    if(lock_print)
+        return;
+
     extern void abort_printing();
     int p = __printh_pid;
 
-    abort_printing();
+    //abort_printing();
+    //waitForProcessFinished(p, 0);
+    kill(p, 0);
     waitForProcessFinished(p, 0);
-    __printh_pid = -1;
 
+    __printh_pid = -1;
     destroyMutex(&mutex);
 }
 
 
 void printLock()
 {
+    if(lock_print)
+        return;
+
     if(!GetPeripheryState (2, 4)) {
         return;
     }
@@ -65,6 +81,9 @@ void printLock()
 
 void printUnLock()
 {
+    if(lock_print)
+        return;
+
     if(!GetPeripheryState (2, 4)) {
         return;
     }
@@ -74,6 +93,9 @@ void printUnLock()
 
 void print(int sz, const char *str)
 {
+    if(lock_print)
+        return;
+
     if(!GetPeripheryState (2, 4)) {
         return;
     }
@@ -106,6 +128,9 @@ int print_handle(int argc, char **argv)
     {
         if(__printh_pid < 0)
             break;
+
+        if(lock_print)
+            continue;
 
         uart_poll_tx_string(0, data);
     }

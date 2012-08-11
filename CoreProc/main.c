@@ -61,9 +61,6 @@ void _init()
 
 void _fini()
 {
-    void csmFini();
-    csmFini();
-
     void asyncPrintFini();
     asyncPrintFini();
 
@@ -72,6 +69,9 @@ void _fini()
 
     void coreThreadsFini();
     coreThreadsFini();
+
+    void csmFini();
+    csmFini();
 
     void socketsFini();
     socketsFini();

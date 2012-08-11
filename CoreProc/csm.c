@@ -10,7 +10,7 @@
 
 typedef struct {
     CoreEvent head;
-    void (*callback)(CSM_RAM *, GBS_MSG *);
+    void (*callback)(int id, CSM_RAM *, GBS_MSG *);
     CSM_RAM cram;
     GBS_MSG msg;
 }CoreCSMEvent __attribute__((aligned(4)));
@@ -29,9 +29,9 @@ typedef struct {
     int minus11;
     unsigned short name_body[128];
 
-    void (*onCreate)(CSM_RAM *);
-    void (*onClose)(CSM_RAM *);
-    void (*onMessage)(CSM_RAM *, GBS_MSG *);
+    void (*onCreate)(int id, CSM_RAM *);
+    void (*onClose)(int id, CSM_RAM *);
+    void (*onMessage)(int id, CSM_RAM *, GBS_MSG *);
 }CoreCSM;
 
 
@@ -113,7 +113,7 @@ void core_csm_create(CSM_RAM *data)
 {
     void core_csm_create_disp(CoreCSMEvent *event)
     {
-        event->callback(&event->cram, 0);
+        event->callback(event->head.id, &event->cram, 0);
     }
 
     CoreCSM *c = getCoreCSMFormRam(data);
@@ -125,7 +125,7 @@ void core_csm_create(CSM_RAM *data)
     event.head.id = c->id;
     event.head.type = (int)CSM_EVENT;
     event.head.dispatcher = (void (*)(void *))core_csm_create_disp;
-    event.callback = (void (*)(CSM_RAM *, GBS_MSG *))c->onCreate;
+    event.callback = (void (*)(int id, CSM_RAM *, GBS_MSG *))c->onCreate;
     memcpy(&event.cram, data, sizeof *data);
 
     data->state = 0;
@@ -139,7 +139,7 @@ void core_csm_destroy(CSM_RAM *data)
 {
     void core_csm_destroy_disp(CoreCSMEvent *event)
     {
-        event->callback(&event->cram, 0);
+        event->callback(event->head.id, &event->cram, 0);
     }
 
     CoreCSM *c = getCoreCSMFormRam(data);
@@ -154,7 +154,7 @@ void core_csm_destroy(CSM_RAM *data)
     event.head.id = c->id;
     event.head.type = (int)CSM_EVENT;
     event.head.dispatcher = (void (*)(void *))core_csm_destroy_disp;
-    event.callback = (void (*)(CSM_RAM *, GBS_MSG *))c->onClose;
+    event.callback = (void (*)(int id, CSM_RAM *, GBS_MSG *))c->onClose;
     memcpy(&event.cram, data, sizeof *data);
 
     sendEvent(c->pid, &event, sizeof event);
@@ -173,7 +173,7 @@ int core_csm_message(CSM_RAM *data, GBS_MSG *msg)
     }
 
     void core_csm_message_disp(CoreCSMEvent *event) {
-        event->callback(&event->cram, &event->msg);
+        event->callback(event->head.id, &event->cram, &event->msg);
     }
 
     if(!c->onMessage)
@@ -185,7 +185,7 @@ int core_csm_message(CSM_RAM *data, GBS_MSG *msg)
     event.head.id = c->id;
     event.head.type = (int)CSM_EVENT;
     event.head.dispatcher = (void (*)(void *))core_csm_message_disp;
-    event.callback = (void (*)(CSM_RAM *, GBS_MSG *))c->onMessage;
+    event.callback = (void (*)(int id, CSM_RAM *, GBS_MSG *))c->onMessage;
     memcpy(&event.cram, data, sizeof *data);
     memcpy(&event.msg, msg, sizeof *msg);
 
@@ -194,10 +194,10 @@ int core_csm_message(CSM_RAM *data, GBS_MSG *msg)
 }
 
 
-int csmCreate(const char *name, int type,
-              void (*onCreate)(CSM_RAM *),
-              void (*onClose)(CSM_RAM *),
-              void (*onMessage)(CSM_RAM *, GBS_MSG *))
+int createCSM(const char *name, int type,
+              void (*onCreate)(int id, CSM_RAM *),
+              void (*onClose)(int id, CSM_RAM *),
+              void (*onMessage)(int id, CSM_RAM *, GBS_MSG *))
 {
     int pid = getpid();
     if(isProcessKilling(pid) == 1)
@@ -262,7 +262,7 @@ int csmCreate(const char *name, int type,
         id = -1;
         free_csm_id(id);
     } else {
-        data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))csmClose, (void *)id, 0);
+        data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))closeCSM, (void *)id, 0);
         NU_Sleep(15); // хак, если сразу вызвать клосксм - он не убивается,
                       // а это может понадобится если процесс умрёт не естественной смертью сразу после создания.
     }
@@ -272,7 +272,7 @@ int csmCreate(const char *name, int type,
 }
 
 
-int csmClose(int id)
+int closeCSM(int id)
 {
     CoreCSM *csm = getCoreCSMData(id);
     if(!csm || !csm->used)
@@ -291,12 +291,12 @@ int csmClose(int id)
 }
 
 
-int csmBindGUI(int id, int gui_id)
+int bindGUIToCSM(int id, int real_gui_id)
 {
     CoreCSM *csm = getCoreCSMData(id);
     if(!csm)
         return -1;
 
-    return csm->guiId = guiID(gui_id);
+    return csm->guiId = real_gui_id;
 }
 

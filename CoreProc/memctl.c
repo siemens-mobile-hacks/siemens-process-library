@@ -35,11 +35,12 @@ static void onClose(ResCtlData *data)
     int pid = getpid();
     struct CoreListInode *inode;
     corelist_clean_foreach_begin(inode, list->first) {
-        if(inode->self) {
-            printf("\033[1m\033[31mpid: %d - free leak ptr: %X\033[0m\n", pid, inode->self);
-            free(inode->self);
-        }
+        void *d = inode->self;
         inode->self = 0;
+        if(d) {
+            printf("\033[1m\033[31mpid: %d - free leak ptr: %X\033[0m\n", pid, d);
+            free(d);
+        }
     }
     corelist_clean_foreach_end(list)
 

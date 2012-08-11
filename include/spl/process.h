@@ -34,8 +34,14 @@ typedef struct
     char *name;
     void *userdata;
     short ppid;
-    CoreMutex critical_code;
-    int critical_locks;
+    char hisr_call;
+    int kill_state, kill_tryes;
+
+    struct {
+        CoreMutex mutex;
+        int locks;
+        int pid, tid;
+    } critical_code;
 
     int (*main)(int, char**);
     int argc;
@@ -44,7 +50,7 @@ typedef struct
 
 }CoreProcess;
 
-
+int isProcessKilling(int pid);
 int enterProcessCriticalCode(int pid);
 int leaveProcessCriticalCode(int pid);
 

@@ -264,16 +264,31 @@ int destroyThread(int tid)
         return -1;
 
     int pid = getpid();
+
+    printf("Entering process critical code...\n");
     enterProcessCriticalCode(pid);
+    printf("Entered\n");
 
     NU_Suspend_Task(thread->t.task);
     NU_Terminate_Task(thread->t.task);
     NU_Delete_Task(thread->t.task);
 
-    free(thread->t.stack);
-    free(thread->t.task);
-    free(thread->name);
-    delProcessThread(thread->ppid, thread->ppid_list_inode);
+    void *d = thread->t.stack;
+    thread->t.stack = 0;
+    if(thread->t.is_stack_freeable)
+        free(d);
+
+    d = thread->t.task;
+    thread->t.task = 0;
+    free(d);
+
+    d = thread->name;
+    thread->name = 0;
+    free(d);
+
+    void *i = thread->ppid_list_inode;
+    thread->ppid_list_inode = 0;
+        delProcessThread(thread->ppid, i);
 
     freeCoreThreadData(thread->t.id);
 

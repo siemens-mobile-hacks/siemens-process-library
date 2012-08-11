@@ -1,6 +1,8 @@
 
 #include <spl/exc_handler.h>
 #include <spl/process.h>
+#include <spl/coreevent.h>
+#include "helperproc.h"
 
 
 /*
@@ -24,7 +26,7 @@ char und_stack[UND_STACK_SIZE];
 
 EXC_QUEUE exc_queue[EXC_QUEUE_MAX_SIZE];
 unsigned int exc_queue_count = 0;
-
+void kill_hisr_chek(int _pid, int code, int hisr);
 
 /* Постановка в очередь нового исключений */
 int AddToExcQueue(int pid, unsigned int lr, unsigned int cpsr, int type, char *string)
@@ -148,7 +150,7 @@ const char msg_pat_sexit[]=
 
 
 //Процедура (Энтрик) HISR'a
-void exc_handler_entry()
+void exception_handler()
 {
     EXC_QUEUE *eq = malloc(sizeof(EXC_QUEUE));
     char msg[256];
@@ -201,12 +203,17 @@ void exc_handler_entry()
 
 
     free(eq);
+    printf_nlock("\033[1m\033[31mException: %s\033[0m\n", msg);
 
-    printf("\033[1m\033[31mException: %s\033[0m\n", msg);
-
-    kill(pid, -1);
+    kill_hisr_chek(pid, -1, 1);
 
     RemoveFromExcQueueElement(rem_id);
+}
+
+
+void exc_handler_entry() {
+    helperproc_schedule(exception_handler, 0, 0, 0);
+    //SUBPROC(exception_handler);
 }
 
 
