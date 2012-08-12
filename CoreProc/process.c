@@ -236,9 +236,9 @@ static void kill_process(int _pid)
 }
 
 
-static void kill_impl(int _pid, int code, int lock)
+static void kill_impl(int _pid, int tid, int code, int lock)
 {
-    printf("%s(%d, %d, %d)\n", __FUNCTION__, _pid, code, lock);
+    printf("%s(%d, %d, %d, %d)\n", __FUNCTION__, _pid, tid, code, lock);
     CoreProcess *proc = coreProcessData(_pid);
     if(!proc || proc->t.id != _pid)
         return;
@@ -269,8 +269,8 @@ static void kill_impl(int _pid, int code, int lock)
     if(proc->kill_state == 0) {
         if(lock) {
             lockMutex(&proc->critical_code.mutex);
-            proc->critical_code.pid = getpid();
-            proc->critical_code.tid = gettid();
+            proc->critical_code.pid = _pid;
+            proc->critical_code.tid = tid;
         }
         proc->kill_state = 1;
     }
@@ -381,7 +381,7 @@ static void handle(int argc, void *argv)
     short mpid = proc->t.id;
     if(proc->kill_mode)
     {
-        kill_impl(mpid, proc->retcode, 0);
+        kill_impl(mpid, proc->sig_from_tid, proc->retcode, 0);
         return;
     }
 
@@ -415,7 +415,7 @@ static void handle(int argc, void *argv)
 
     proc->retcode = proc->main(proc->argc, proc->argv);
 
-    kill_impl(mpid, proc->retcode, 1);
+    kill_impl(mpid, -1, proc->retcode, 1);
 }
 
 
@@ -435,17 +435,21 @@ void quit()
 }
 
 
-void kill_hisr_chek(int _pid, int code, int hisr)
+void kill_hisr_chek(int _pid, int tid, int code, int hisr)
 {
-    printf("%s(%d)\n", __FUNCTION__, _pid);
+    printf("%s(%d, %d)\n", __FUNCTION__, _pid, tid);
     if(_pid < 0 && _pid >= MAX_PROCESS_ID)
         return;
 
 
     if(_pid == getpid()) { // self kill
-        kill_impl(_pid, code, 1);
+        if(tid > -1 && tid == gettid())
+            goto reset_and_kill;
+        kill_impl(_pid, tid, code, 1);
 
     } else {
+
+        reset_and_kill: {
 
         CoreProcess *proc = coreProcessData(_pid);
         if(proc->t.id < 0)
@@ -453,13 +457,14 @@ void kill_hisr_chek(int _pid, int code, int hisr)
 
         if(proc->terminated != 2) {
             lockMutex(&proc->critical_code.mutex);
-            proc->critical_code.pid = getpid();
-            proc->critical_code.tid = gettid();
+            proc->critical_code.pid = _pid;
+            proc->critical_code.tid = tid;
         }
 
         printf("Finish him!\n");
 
         proc->hisr_call = hisr;
+        proc->sig_from_tid = tid;
         proc->kill_mode = 1;
         proc->terminated = 1;
         proc->retcode = code;
@@ -471,14 +476,15 @@ void kill_hisr_chek(int _pid, int code, int hisr)
         printf("Reset: %d\n", r);
 
         r = NU_Resume_Task(proc->t.task);
-        printf("Resume: %d\n", r);
+        //printf("Resume: %d\n", r);
+        }
     }
 }
 
 
 void kill(int _pid, int code)
 {
-    kill_hisr_chek(_pid, code, 0);
+    kill_hisr_chek(_pid, gettid(), code, 0);
 }
 
 
@@ -566,6 +572,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     proc->hisr_call = 0;
     proc->kill_state = 0;
     proc->kill_tryes = 0;
+    proc->sig_from_tid = -1;
 
 
     if( (err = NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
@@ -869,13 +876,17 @@ int enterProcessCriticalCode(int pid)
                 // то выходим нафиг
                 return 0;
         }
+
         // если тред не лочили, а лочили процесс
-        else if(proc->critical_code.pid > -1){
+        if(proc->critical_code.pid > -1){
             // и опять его же лочим
             if(proc->critical_code.pid == getpid())
                 // то выходим нафиг
                 return 0;
         }
+
+        printf("enterProcessCriticalCode: locking(%d, %d) (%d, %d)... \n", proc->critical_code.pid,
+               proc->critical_code.tid, getpid(), gettid());
 
         lockMutex(&proc->critical_code.mutex);
         proc->critical_code.pid = getpid();

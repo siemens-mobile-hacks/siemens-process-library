@@ -68,6 +68,9 @@
 		<Unit filename="exc_handler.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="exc_vector.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="exc_vectors.s" />
 		<Unit filename="fs.c">
 			<Option compilerVar="CC" />

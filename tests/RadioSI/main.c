@@ -539,7 +539,8 @@ int main(int argc, char **argv)
     if(argc > 1)
         strcpy(fname, argv[1]);
     else {
-        strcpy(fname, "http://195.95.206.17/HitFM_32");
+        //strcpy(fname, "http://195.95.206.17/HitFM_32");
+        strcpy(fname, "http://online-hitfm.tavrmedia.ua/HitFM_32");
         //strcpy(fname, "http://urg.adamant.net:8080/radio-stilnoe48k");
     }
 

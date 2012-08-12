@@ -8,7 +8,7 @@
 
 
 typedef struct {
-    int pid;
+    int pid, tid;
     unsigned int lr;
     unsigned int cpsr;
     unsigned int type;
@@ -20,14 +20,14 @@ typedef struct {
 
 void *get_stack_pointer_from_proc(int pid);
 
-int  AddToExcQueue(int pid, unsigned int lr, unsigned int cpsr, int type, char *string);
+int  AddToExcQueue(int pid, int tid, unsigned int lr, unsigned int cpsr, int type, char *string);
 int  GetExcQueueElement(EXC_QUEUE *exc_que);
 void RemoveFromExcQueueElement(int id);
 
 
-extern void da_handler_vector();
-extern void pa_handler_vector();
-extern void ui_handler_vector();
+void da_handler_vector();
+void pa_handler_vector();
+void ui_handler_vector();
 
 extern void swi2_vector();
 extern void swi3_vector();

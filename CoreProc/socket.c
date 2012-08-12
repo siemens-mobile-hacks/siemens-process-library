@@ -30,14 +30,11 @@ void replace_idle_message_func()
     corearray_init(&sockets_mess_handless, 0);
 
     CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    //memcpy(&icsmd, icsm->constr, sizeof(icsmd));
-    //old_icsm = (CSM_RAM *)icsm->constr;
-    //old_icsm_onMessage = icsmd.onMessage;
-    //icsmd.onMessage = IDLECSM_onMessage;
-    //icsm->constr = &icsmd;
-    CSM_DESC *cd = (CSM_DESC *)icsm->constr;
-    old_icsm_onMessage = cd->onMessage;
-    cd->onMessage = IDLECSM_onMessage;
+    memcpy(&icsmd, icsm->constr, sizeof(icsmd));
+    old_icsm = (CSM_RAM *)icsm->constr;
+    old_icsm_onMessage = icsmd.onMessage;
+    icsmd.onMessage = IDLECSM_onMessage;
+    icsm->constr = &icsmd;
 }
 
 
@@ -46,8 +43,6 @@ void restore_idle_message_func()
     corearray_release(&sockets_mess_handless);
     CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
     //icsm->constr = (void *)old_icsm;
-    CSM_DESC *cd = (CSM_DESC *)icsm->constr;
-    //cd->onMessage = old_icsm_onMessage;
 }
 
 
@@ -194,11 +189,11 @@ static int freeSocket(int _sid)
 /**************************** socket implementation ***************************/
 /******************************************************************************/
 typedef struct {
+    NU_SEMAPHORE wait;
     const char *host;
     int id;
     int ip;
     int err;
-    int wid;
     int attempts;
     GBSTMR dnr_wait;
 
@@ -219,7 +214,7 @@ int streamBySocket(int sid)
 
 int gethostbyname(const char *host)
 {
-    dnrImpl dnr = {.host = host, .err = -1, .attempts = 4, .wid = createWaitCond("dnr_work")};
+    dnrImpl dnr = {.host = host, .err = -1, .attempts = 4};
     int pid = getpid();
 
     if(isProcessKilling(pid) == 1)
@@ -227,9 +222,10 @@ int gethostbyname(const char *host)
 
     enterProcessCriticalCode(pid);
 
+    NU_Create_Semaphore(&dnr.wait, (CHAR*)"host", 0, NU_PRIORITY);
     SUBPROC(gethostbyname_impl, &dnr);
-    waitCondition(dnr.wid);
-    destroyWaitCond(dnr.wid);
+    NU_Obtain_Semaphore(&dnr.wait, NU_SUSPEND);
+    NU_Delete_Semaphore(&dnr.wait);
 
     leaveProcessCriticalCode(pid);
     return dnr.ip;
@@ -258,7 +254,7 @@ static void gethostbyname_impl(dnrImpl *dnr)
                 if(--dnr->attempts > 4) {
                     dnr->err = -1;
                     dnr->ip = -1;
-                    wakeOneWaitCond(dnr->wid);
+                    NU_Release_Semaphore(&dnr->wait);
                     return;
                 }
 
@@ -271,7 +267,7 @@ static void gethostbyname_impl(dnrImpl *dnr)
         {
             dnr->err = -2;
             dnr->ip = -1;
-            wakeOneWaitCond(dnr->wid);
+            NU_Release_Semaphore(&dnr->wait);
             return;
         }
     }
@@ -280,13 +276,13 @@ static void gethostbyname_impl(dnrImpl *dnr)
     {
         dnr->err = 0;
         dnr->ip = p_res[3][0][0];
-        wakeOneWaitCond(dnr->wid);
+        NU_Release_Semaphore(&dnr->wait);
         return;
     }
 
     dnr->err = -3;
     dnr->ip = -1;
-    wakeOneWaitCond(dnr->wid);
+    NU_Release_Semaphore(&dnr->wait);
 }
 
 
@@ -612,6 +608,7 @@ int _sread(int fd, void *data, size_t size, int flag)
     //printf("socket read ...\n");
     void __read(WriteData *d) {
         d->ret = recv(d->sock, d->data, d->size, d->flag);
+        //printf("socket subread complete\n");
         NU_Release_Semaphore(&d->wait);
     }
 

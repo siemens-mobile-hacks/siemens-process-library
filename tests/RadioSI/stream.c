@@ -112,7 +112,7 @@ int stream_close()
 }*/
 
 
-int parse_url(const char *url, char **host, unsigned int *ip, char **request_location, unsigned short *port)
+int parse_url(const char *url, char **host, unsigned int *ip, char **request_location, unsigned int *port)
 {
     const char *s = url;
     if(!memcmp(s, "http://", 7))
@@ -122,65 +122,149 @@ int parse_url(const char *url, char **host, unsigned int *ip, char **request_loc
     while(*s != ':' && *s != '/' && *s) ++s;
     if(*s != ':' && *s != '/')
         return -1;
-    const char *host_end = s;
+    char *host_end = (char*)s;
 
     if( isdigit(*host_begin) ) {
+        printf("Parseurl: ip detected\n");
         *host = 0;
 
         unsigned int _ip[4];
         sscanf(host_begin, "%d.%d.%d.%d", &_ip[0], &_ip[1], &_ip[2], &_ip[3]);
         *ip = htonl(IP_ADDR(_ip[0],_ip[1],_ip[2],_ip[3]));
+        printf("ip: %d.%d.%d.%d\n", _ip[0],_ip[1],_ip[2],_ip[3]);
 
     } else {
         *ip = -1;
         *host = memoryAlloc(getpid(), s - host_begin + 1);
         memcpy(*host, host_begin, s - host_begin);
-        *host[s - host_begin] = 0;
+        (*host)[s - host_begin] = 0;
     }
 
-    const char *request_location_start = 0;
+    char *request_location_start = 0;
     if(*host_end == ':') {
         request_location_start = strchr(host_end+1, '/');
-        sscanf(host_begin+1, "%d", port);
+        printf("getting port...\n");
+        if(!request_location_start)
+            request_location_start = host_end+strlen(host_end);
+
+        sscanf(host_end+1, "%d", port);
+        printf("port: %d\n", *port);
     } else {
-        request_location_start = host_end;
+        request_location_start = (char*)host_end;
         *port = 80;
     }
 
     if(request_location_start) {
         *request_location = strdup(request_location_start);
     } else
-        *request_location = 0;
+        *request_location = "/";
 
 
     return 0;
 }
 
 
-static FILE *open_stream_socket(const char *location)
+static int open_witch_redirections(const char *location, char *data, int *sz)
 {
-    char db[256];
     char *host, *req;
     unsigned int ip = -1;
-    unsigned short port = -1;
+    unsigned int port = -1;
 
+again:
+
+    printf("location: %s\n", location);
     if( parse_url(location, &host, &ip, &req, &port) ) {
-        ShowMSG(1, (int)"Parse url failed");
-        return 0;
+        return -1;
     }
 
+    printf("parse done\n");
 
     int sock;
     if(host) {
+        printf("Host: %s\n", host);
         sock = socket_open_by_host(host, port);
+        free(host);
     }
     else if((int)ip != -1) {
+        printf("Ip: %d\n", ip);
         sock = socket_open_by_ip(ip, port);
     } else {
         ShowMSG(1, (int)"Unknow url");
-        return 0;
+        return -1;
     }
 
+
+    if(sock < 0) {
+        return -1;
+    }
+
+
+
+    printf("req: %s\n", req);
+    char request[1024*2] = {0}, ansver[1024*4] = {0};
+    int len = sprintf(request, "GET %s HTTP/1.0\r\n"
+                     "Host: online-hitfm.tavrmedia.ua\r\n"
+                     "User-Agent: Siemens HitFM player\r\n"
+                     "Referer: http://online-hitfm.tavrmedia.ua\r\n"
+                     "Icy-MetaData: 1\r\n"
+                     "Connection: keep_alive\r\n\r\n", req);
+
+    free(req);
+
+    printf("Write\n");
+    if( write(sock, request, len) < 1 ) {
+        close(sock);
+        return -1;
+    }
+
+    printf("Read\n");
+    if( (len = read(sock, ansver, 512)) < 1 ) {
+        printf("Fail\n");
+        close(sock);
+        return -1;
+    }
+    printf("Readed\n");
+
+
+    if(!memcmp(ansver+9, "302 Moved Temporarily", 21) || !memcmp(ansver+9, "301 Moved Permanently", 21)) {
+
+        printf(ansver);
+        close(sock);
+        sock = -1;
+
+        printf(" ====> Moved Temporarily\n");
+        char *loc = strstr(ansver, "Location: ");
+        if(!loc || loc >= ansver+len) return -1;
+
+        loc += 10;
+        char *end = strstr(loc, "\r\n");
+        if(!end)
+            return -1;
+
+        memcpy(request, loc, end-loc);
+        request[end-loc] = 0;
+        location = request;
+        goto again;
+    }
+
+    if(!memcmp(ansver+9, "200 OK", 6)) {
+        printf(" ====> 200 OK\n");
+        memcpy(data, ansver, len);
+        data[len] = 0;
+        *sz = len;
+        return sock;
+    }
+
+    close(sock);
+    return -1;
+}
+
+
+static FILE *open_stream_socket(const char *location)
+{
+    char ansver[1024];
+    int len = 0;
+    int sock = open_witch_redirections(location, ansver, &len);
 
     if(sock < 0) {
         ShowMSG(1, (int)"socket failed");
@@ -195,29 +279,6 @@ static FILE *open_stream_socket(const char *location)
         return 0;
     }
 
-    char request[1024] = {0}, ansver[1024] = {0};
-    int len = sprintf(request, "GET %s HTTP/1.0\r\n"
-                     "Host: online-hitfm.tavrmedia.ua\r\n"
-                     "User-Agent: Siemens HitFM player\r\n"
-                     "Referer: http://online-hitfm.tavrmedia.ua\r\n"
-                     "Icy-MetaData: 1\r\n"
-                     "Connection: keep_alive\r\n\r\n", req);
-
-    if( write(sock, request, len) < 1 ) {
-        fclose(fp);
-        ShowMSG(1, (int)"write failed");
-        return 0;
-    }
-
-    if( (len = read(sock, ansver, 512)) < 1 ) {
-        fclose(fp);
-        ShowMSG(1, (int)"read failed");
-        return 0;
-    }
-
-    /*if(len < 512) {
-        len += read(sock, ansver+len, 400);
-    }*/
 
     if(!memcmp(ansver+9, "200 OK", 6)) {
         parse_info(ansver);

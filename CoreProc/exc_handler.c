@@ -26,16 +26,17 @@ char und_stack[UND_STACK_SIZE];
 
 EXC_QUEUE exc_queue[EXC_QUEUE_MAX_SIZE];
 unsigned int exc_queue_count = 0;
-void kill_hisr_chek(int _pid, int code, int hisr);
+void kill_hisr_chek(int _pid, int tid, int code, int hisr);
 
 /* Постановка в очередь нового исключений */
-int AddToExcQueue(int pid, unsigned int lr, unsigned int cpsr, int type, char *string)
+int AddToExcQueue(int pid, int tid, unsigned int lr, unsigned int cpsr, int type, char *string)
 {
     for (int i = 0; i < EXC_QUEUE_MAX_SIZE; i++)
     {
         if (exc_queue[i].type == 0x00)
         {
             exc_queue[i].pid     =  pid;
+            exc_queue[i].tid     =  tid;
             exc_queue[i].lr      =  lr;
             exc_queue[i].cpsr    =  cpsr;
             exc_queue[i].type    =  type;
@@ -57,6 +58,7 @@ int GetExcQueueElement(EXC_QUEUE *exc_que)
         if (exc_queue[i].type != 0x00)
         {
             exc_que->pid     =  exc_queue[i].pid;
+            exc_que->tid     =  exc_queue[i].tid;
             exc_que->lr      =  exc_queue[i].lr;
             exc_que->cpsr    =  exc_queue[i].cpsr;
             exc_que->type    =  exc_queue[i].type;
@@ -73,6 +75,7 @@ void RemoveFromExcQueueElement(int id)
     if (id >= EXC_QUEUE_MAX_SIZE) return;
 
     exc_queue[id].pid     = -1;
+    exc_queue[id].tid     = -1;
     exc_queue[id].lr      = 0;
     exc_queue[id].cpsr    = 0;
     exc_queue[id].type    = 0;
@@ -106,7 +109,8 @@ void *get_stack_pointer_from_proc(int pid)
 }
 
 /* Общий обработчик исключений и ошибок */
-void AbortCommonHandler(int pid, unsigned long lr, unsigned long cpsr, int type)
+__attribute__((__noreturn__))
+void AbortCommonHandler(int pid, int tid, unsigned long lr, unsigned long cpsr, int type)
 {
     char *s = 0, *ss = 0;
 
@@ -119,7 +123,7 @@ void AbortCommonHandler(int pid, unsigned long lr, unsigned long cpsr, int type)
     else if (s[0] == '\0') s = (char *)store_string;
 
     //Добавим новое исключение в очередь для обработки
-    AddToExcQueue(pid, lr, cpsr, type, s);
+    AddToExcQueue(pid, tid, lr, cpsr, type, s);
 
     //Очистим место, где название ошибки
     if (ss != (char *)-1) memset(ss, 0, 0x20);
@@ -139,12 +143,13 @@ void AbortCommonHandler(int pid, unsigned long lr, unsigned long cpsr, int type)
 /* Шаблон сообщения об ошибке */
 const char msg_pat[]=
     "%s\n"
-    "%s(pid: %d)\n"
+    "%s(pid: %d; tid: %d)\n"
     "CPSR=%08X\n"
     "LR=%08X\n";
 
 const char msg_pat_sexit[]=
     "(S)Exit: %s\n"
+    "(pid: %d; tid: %d)\n"
     "%s\n"
     "LR=%08X\n";
 
@@ -153,9 +158,10 @@ const char msg_pat_sexit[]=
 void exception_handler()
 {
     EXC_QUEUE *eq = malloc(sizeof(EXC_QUEUE));
-    char msg[256];
+    char msg[256] = {0};
     int rem_id = GetExcQueueElement(eq);
     int pid = eq->pid;
+    int tid = eq->tid;
     const char *task_name = pidName(pid);
 
     if(!task_name)
@@ -166,7 +172,7 @@ void exception_handler()
     case EXC_TYPE_DATA_ABORT:
         sprintf(msg, msg_pat, "Data Abort!",
                 task_name,
-                pid,
+                pid, tid,
                 eq->cpsr,
                 eq->lr
                );
@@ -175,7 +181,7 @@ void exception_handler()
     case EXC_TYPE_PREFETCH_ABORT:
         sprintf(msg, msg_pat, "Prefetch Abt!",
                 task_name,
-                pid,
+                pid, tid,
                 eq->cpsr,
                 eq->lr
                );
@@ -184,15 +190,16 @@ void exception_handler()
     case EXC_TYPE_UND_INSTR:
         sprintf(msg, msg_pat, "Und. Instruct.!",
                 task_name,
-                pid,
+                pid, tid,
                 eq->cpsr,
                 eq->lr
                );
         ShowMSG(2, (int)msg);
         break;
-    case EXC_TYPE_SEXIT:
+    case EXC_TYPE_SEXIT: case 5:
         sprintf(msg, msg_pat_sexit,
                 eq->string,
+                pid, tid,
                 task_name,
                 eq->lr
                );
@@ -203,9 +210,9 @@ void exception_handler()
 
 
     free(eq);
-    printf_nlock("\033[1m\033[31mException: %s\033[0m\n", msg);
+    printf_nlock("\033[1m\033[31mException: type: %d\npid: %d\ntid: %d\033[0m\n", eq->type, eq->pid, eq->tid);
 
-    kill_hisr_chek(pid, -1, 1);
+    kill_hisr_chek(pid, tid, -1, 1);
 
     RemoveFromExcQueueElement(rem_id);
 }

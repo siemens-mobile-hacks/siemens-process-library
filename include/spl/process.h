@@ -36,6 +36,7 @@ typedef struct
     short ppid;
     char hisr_call;
     int kill_state, kill_tryes;
+    int sig_from_tid;
 
     struct {
         CoreMutex mutex;

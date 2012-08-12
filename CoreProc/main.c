@@ -8,6 +8,9 @@
 
 void _init()
 {
+    void da_handler_vector();
+    //da_handler_vector();
+
     void NU_ExceptionsInit();
     NU_ExceptionsInit();
 
