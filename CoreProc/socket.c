@@ -42,7 +42,7 @@ void restore_idle_message_func()
 {
     corearray_release(&sockets_mess_handless);
     CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    //icsm->constr = (void *)old_icsm;
+    icsm->constr = (void *)old_icsm;
 }
 
 
@@ -577,7 +577,11 @@ int _sread(int fd, void *data, size_t size, int flag)
     if(!sock || sock->id < 0)
         return -1;
 
+    //printf("_sread(%d, %X, %d, %d)\n", fd, data, size, flag);
     int pid = getpid();
+
+    //printf("getpid: %d\n", pid);
+
     if(isProcessKilling(pid) == 1)
         return -1;
 
@@ -585,7 +589,9 @@ int _sread(int fd, void *data, size_t size, int flag)
         return -1;
     }
 
+    //printf("Wait cond(%d) ...\n", sock->readWid);
     waitCondition(sock->readWid);
+    //printf("Wait cond done\n");
 
     if( !(sock->state & SS_CAN_READ) ) {
         return -2;

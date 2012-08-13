@@ -8,7 +8,7 @@
 #include "helperproc.h"
 
 
-#if 0
+#if 1
 void helperProcInit(){}
 void helperProcFini(){}
 void helperproc_schedule(void *func, void *d1, void *d2, void *d3) {
@@ -72,7 +72,7 @@ void helperproc_handle(int argc, void *argv)
     UNUSED(argv);
 
     unsigned long asize;
-    helper_data event = {0,{0,0,0}};
+    helper_data event = {0,{1,2,3}};
     while(1)
     {
         if(NU_Receive_From_Queue(&help_queue, &event, message_size, &asize, NU_SUSPEND) != NU_SUCCESS)
@@ -84,7 +84,7 @@ void helperproc_handle(int argc, void *argv)
         sprintf(d, "%X\n%d\n %d - %d", event.run, event.data[0], asize, message_size);
         ShowMSG(1, (int)d);*/
 
-        //printf("%X\nfunc: %X\n", helperproc_handle, event.run);
+        printf("helper: asize %d (%X, %X, %X)\n", asize, event.data[0], event.data[1], event.data[2]);
 
         if(event.run)
             event.run(event.data[0], event.data[1], event.data[2]);

@@ -81,7 +81,8 @@ int destroyWaitCond(int wid)
     if(!wc || !wc->used)
         return -1;
 
-    eraseProcessDtor(wc->pid, wc->dt_id);
+    if(wc->dt_id > -1)
+        eraseProcessDtor(wc->pid, wc->dt_id);
 
     int status = 0;
     status = NU_Delete_Semaphore(&wc->sema);

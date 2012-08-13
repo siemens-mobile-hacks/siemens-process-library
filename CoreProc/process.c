@@ -17,6 +17,7 @@ typedef struct
     void *d[2];
 }TorsList;
 
+char *_strdup(const char *str);
 static CoreProcess core_process[MAX_PROCESS_ID];
 static CoreMutex pb_mutex;
 
@@ -170,8 +171,9 @@ int pidByTask(NU_TASK *task)
 int getpid()
 {
     NU_TASK *task = NU_Current_Task_Pointer();
-    if(!task)
+    if(!task) {
         return -1;
+    }
 
     int tid = tidByTask(task);
     if(tid > -1) {
@@ -196,9 +198,7 @@ static void kill_process(int _pid)
     if(!proc || proc->t.id != _pid)
         return;
 
-    int err = 0, ex_wc = proc->exit_wait_cond;
-
-    proc->exit_wait_cond = -1;
+    int err = 0;
 
     NU_Suspend_Task(proc->t.task);
     if( NU_Terminate_Task(proc->t.task) != NU_SUCCESS) {
@@ -229,10 +229,8 @@ static void kill_process(int _pid)
     //SetVibration(40);
     //NU_Sleep(30);
     //SetVibration(0);
-    freeCoreProcessData(_pid);
 
-    wakeAllWaitConds(ex_wc);
-    destroyWaitCond(ex_wc);
+    freeCoreProcessData(_pid);
 }
 
 
@@ -346,6 +344,7 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         proc->kill_state ++;
     }
 
+    printf("Free proc name\n");
     if(proc->name) {
         void *d = proc->name;
         proc->name = 0;
@@ -358,6 +357,12 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         SUBPROC(kill_process, _pid);
         proc->kill_state ++;
     }
+
+
+    int ex_wc = proc->exit_wait_cond;
+    proc->exit_wait_cond = -1;
+    wakeAllWaitConds(ex_wc);
+    destroyWaitCond(ex_wc);
 
     helperproc_schedule((void *)kill_process, (void *)_pid, 0, 0);
 
@@ -566,7 +571,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     proc->t.type = 1;
     proc->t.is_stack_freeable = conf->is_stack_freeable;
     proc->ppid = getpid();
-    proc->name = strdup(name);
+    proc->name = _strdup(name);
     proc->main = _main;
     proc->retcode = 0;
     proc->hisr_call = 0;
@@ -866,13 +871,16 @@ int enterProcessCriticalCode(int pid)
     /*if(proc->terminated == 2)
         return -2;*/
 
+    int _pid = getpid();
+    int _tid = gettid();
+
     proc->critical_code.locks++;
     if(proc->critical_code.locks == 1) {
 
         // если мы уже залочили тред
         if(proc->critical_code.tid > -1){
             // и опять его же лочим
-            if(proc->critical_code.tid == gettid())
+            if(proc->critical_code.tid == _tid)
                 // то выходим нафиг
                 return 0;
         }
@@ -880,17 +888,17 @@ int enterProcessCriticalCode(int pid)
         // если тред не лочили, а лочили процесс
         if(proc->critical_code.pid > -1){
             // и опять его же лочим
-            if(proc->critical_code.pid == getpid())
+            if(proc->critical_code.pid == _pid)
                 // то выходим нафиг
                 return 0;
         }
 
-        printf("enterProcessCriticalCode: locking(%d, %d) (%d, %d)... \n", proc->critical_code.pid,
-               proc->critical_code.tid, getpid(), gettid());
+        //printf("enterProcessCriticalCode: locking(%d, %d) (%d, %d)... \n", proc->critical_code.pid,
+        //       proc->critical_code.tid, _pid, _tid);
 
         lockMutex(&proc->critical_code.mutex);
-        proc->critical_code.pid = getpid();
-        proc->critical_code.tid = gettid();
+        proc->critical_code.pid = _pid;
+        proc->critical_code.tid = _tid;
     }
 
     return 0;

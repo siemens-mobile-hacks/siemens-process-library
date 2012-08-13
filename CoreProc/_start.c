@@ -23,6 +23,19 @@ char *strdup(const char *str)
     return r;
 }
 
+char *_strdup(const char *str)
+{
+    size_t sz = strlen(str);
+    char *r = malloc(sz+1);
+
+    if(r) {
+        memcpy(r, str, sz);
+        r[sz] = 0;
+    }
+
+    return r;
+}
+
 
 /*
 

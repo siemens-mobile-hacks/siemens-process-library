@@ -6,26 +6,26 @@
 #include <spl/queue.h>
 
 
-struct idQueue {
+typedef struct  {
     int id;
     NU_QUEUE queue;
     int pid;
     int dt_id;
-};
+}idQueue;
 
-
-struct idQueue queue_db[256];
+#define MAX_QUEUE_ID 256
+static idQueue queue_db[MAX_QUEUE_ID];
 
 
 void queueInit()
 {
-    for(int i=0; i<256; ++i)
+    for(int i=0; i<MAX_QUEUE_ID; ++i)
         queue_db[i].id = -1;
 }
 
 
-struct idQueue *coreQueueData(short id) {
-    if(id > 255 || id < 0)
+idQueue *coreQueueData(short id) {
+    if(id >= MAX_QUEUE_ID || id < 0)
         return 0;
 
     return &queue_db[id];
@@ -34,7 +34,7 @@ struct idQueue *coreQueueData(short id) {
 
 static short emptyQueue()
 {
-    for(short i =0; i<256; ++i)
+    for(int i =0; i<MAX_QUEUE_ID; ++i)
     {
         if(queue_db[i].id < 0)
             return i;
@@ -50,7 +50,7 @@ int createQueue(const char *name, void *start_address, unsigned long queue_size,
                                   unsigned char suspend_type)
 {
     int id = emptyQueue();
-    struct idQueue *q = coreQueueData(id);
+    idQueue *q = coreQueueData(id);
     if(!q) {
         return -1;
     }
@@ -71,20 +71,20 @@ int createQueue(const char *name, void *start_address, unsigned long queue_size,
 
 int destroyQueue(int id)
 {
-    struct idQueue *q = coreQueueData(id);
+    idQueue *q = coreQueueData(id);
     if(!q || q->id != id)
         return -1;
 
     NU_Delete_Queue(&q->queue);
-    q->id = -1;
     eraseProcessDtor(q->pid, q->dt_id);
+    q->id = -1;
     return 0;
 }
 
 
 NU_QUEUE *getQueueDataByID(int id)
 {
-    struct idQueue *q = coreQueueData(id);
+    idQueue *q = coreQueueData(id);
     if(!q || q->id != id)
         return 0;
 

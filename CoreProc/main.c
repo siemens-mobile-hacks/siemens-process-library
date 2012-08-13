@@ -2,15 +2,11 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <stdarg.h>
-
-
+#include <spl/coreevent.h>
 
 
 void _init()
 {
-    void da_handler_vector();
-    //da_handler_vector();
-
     void NU_ExceptionsInit();
     NU_ExceptionsInit();
 
@@ -58,6 +54,16 @@ void _init()
 
     void guiInit();
     guiInit();
+
+    extern void *__ex;
+    Elf32_Exec *ex = (Elf32_Exec*)&__ex;
+
+    int i = _open("4:\\elf\\coretest\\start.txt", A_Create | A_Truncate | A_WriteOnly | A_BIN, P_WRITE, 0);
+
+    char s[56];
+    int l = sprintf(s, "Lib Range: %X - %X\n", ex->body, ex->body+ex->bin_size);
+    _write(i, s, l, 0);
+    _close(i, 0);
 }
 
 

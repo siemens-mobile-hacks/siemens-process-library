@@ -1,4 +1,5 @@
 
+#include <swilib.h>
 #include <spl/corearray.h>
 
 
@@ -13,13 +14,25 @@ void corearray_fill_cached(CoreArray *array, void *fill)
 
 void corearray_init(CoreArray *array, void *empty_cell_fill)
 {
+    void *__malloc(size_t size) {
+        return malloc(size);
+    }
+
+    void __free(void *ptr) {
+        free(ptr);
+    }
+
+    void *__realloc(void *ptr, size_t size) {
+        return realloc(ptr, size);
+    }
+
     array->array = (void **)malloc( 4 * sizeof(void*) );
     array->cached = 4;
     array->size = 0;
     array->empty_fill = empty_cell_fill;
-    array->malloc = malloc;
-    array->free = free;
-    array->realloc = realloc;
+    array->malloc = __malloc;
+    array->free = __free;
+    array->realloc = __realloc;
 
 }
 

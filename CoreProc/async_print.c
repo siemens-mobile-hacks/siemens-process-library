@@ -10,7 +10,7 @@
 char _debug_data[4*1024];
 static CoreMutex mutex = {.locks = 0};
 int __printh_pid = -1;
-static const int lock_print = 0;
+static const int lock_print = 1;
 static int queue;
 
 
@@ -61,6 +61,10 @@ void asyncPrintFini()
     //waitForProcessFinished(p, 0);
     kill(p, 0);
     //waitForProcessFinished(p, 0);
+
+    while(coreProcessData(p)->t.id > -1) {
+        NU_Sleep(2);
+    }
 
     __printh_pid = -1;
     destroyMutex(&mutex);

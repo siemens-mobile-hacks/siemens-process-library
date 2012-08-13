@@ -241,16 +241,20 @@ void sync_test()
 }
 
 
+int _ShowMSG(int type, int lang) {
+    return ShowMSG(type, lang);
+}
+
 void _sync_ShowMSG(int type, int lang)
 {
-    SafeProcessRun(ShowMSG, void, NU_SYNCHRONIZED_PROC, 2, type, lang);
+    SafeProcessRun(_ShowMSG, void, NU_SYNCHRONIZED_PROC, 2, type, lang);
 }
 
 
 
 void _async_ShowMSG(int type, int lang)
 {
-    SafeProcessRun(ShowMSG, void, NU_ASYNC_PROC, 2, type, lang);
+    SafeProcessRun(_ShowMSG, void, NU_ASYNC_PROC, 2, type, lang);
 }
 
 
@@ -258,49 +262,73 @@ void _async_ShowMSG(int type, int lang)
 
 int sync_open(const char * cFileName, unsigned int iFileFlags, unsigned int iFileMode, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_open, int, NU_SYNCHRONIZED_PROC, 4, cFileName, iFileFlags, iFileMode, ErrorNumber);
+    int __open(const char * cFileName, unsigned int iFileFlags, unsigned int iFileMode, unsigned int *ErrorNumber) {
+        return _open(cFileName, iFileFlags, iFileMode, ErrorNumber);
+    }
+    SafeProcessRun(__open, int, NU_SYNCHRONIZED_PROC, 4, cFileName, iFileFlags, iFileMode, ErrorNumber);
 }
 
 
 int sync_read(int FileHandler, void *cBuffer, int iByteCount, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_read, int, NU_SYNCHRONIZED_PROC, 4, FileHandler, cBuffer, iByteCount, ErrorNumber);
+    int __read(int FileHandler, void *cBuffer, int iByteCount, unsigned int *ErrorNumber) {
+        return _read(FileHandler, cBuffer, iByteCount, ErrorNumber);
+    }
+
+    SafeProcessRun(__read, int, NU_SYNCHRONIZED_PROC, 4, FileHandler, cBuffer, iByteCount, ErrorNumber);
 }
 
 
 int sync_write(int FileHandler, void const * cBuffer, int iByteCount, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_write, int, NU_SYNCHRONIZED_PROC, 4, FileHandler, cBuffer, iByteCount, ErrorNumber);
+    int __write(int FileHandler, void const * cBuffer, int iByteCount, unsigned int *ErrorNumber) {
+        return _write(FileHandler, cBuffer, iByteCount, ErrorNumber);
+    }
+
+    SafeProcessRun(__write, int, NU_SYNCHRONIZED_PROC, 4, FileHandler, cBuffer, iByteCount, ErrorNumber);
 }
 
 
 int sync_close(int FileHandler, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_close, int, NU_SYNCHRONIZED_PROC, 2, FileHandler, ErrorNumber);
+    int __close(int FileHandler, unsigned int *ErrorNumber) {
+        return _close(FileHandler, ErrorNumber);
+    }
+    SafeProcessRun(__close, int, NU_SYNCHRONIZED_PROC, 2, FileHandler, ErrorNumber);
 }
 
 
 int sync_flush(int FileHandler, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_flush, int, NU_SYNCHRONIZED_PROC, 2, FileHandler, ErrorNumber);
+    int __flush(int f, unsigned int *ErrorNumber) { return _flush(f, ErrorNumber); }
+    SafeProcessRun(__flush, int, NU_SYNCHRONIZED_PROC, 2, FileHandler, ErrorNumber);
 }
 
 
 int sync_truncate(int FileHandler, int length, unsigned int *errornumber)
 {
-    SafeProcessRun(_truncate, int, NU_SYNCHRONIZED_PROC, 3, FileHandler, length, errornumber);
+    int __truncate(int FileHandler, int length, unsigned int *errornumber) {
+        return _truncate(FileHandler, length, errornumber);
+    }
+    SafeProcessRun(__truncate, int, NU_SYNCHRONIZED_PROC, 3, FileHandler, length, errornumber);
 }
 
 
 int sync_unlink(const char *cFileName, unsigned int *errornumber)
 {
-    SafeProcessRun(_unlink, int, NU_SYNCHRONIZED_PROC, 2, cFileName, errornumber);
+    int __unlink() {
+        return _unlink(cFileName, errornumber);
+    }
+    SafeProcessRun(__unlink, int, NU_SYNCHRONIZED_PROC, 2, cFileName, errornumber);
 }
 
 
 int sync_lseek(int FileHandler, unsigned int offset, unsigned int origin, unsigned int *ErrorNumber, unsigned int *ErrorNumber2)
 {
-    SafeProcessRun(_lseek, int, NU_SYNCHRONIZED_PROC, 5, FileHandler, offset, origin, ErrorNumber, ErrorNumber2);
+    int __lseek(int FileHandler, unsigned int offset, unsigned int origin, unsigned int *ErrorNumber, unsigned int *ErrorNumber2) {
+        return _lseek(FileHandler, offset, origin, ErrorNumber, ErrorNumber2);
+    }
+    SafeProcessRun(__lseek, int, NU_SYNCHRONIZED_PROC, 5, FileHandler, offset, origin, ErrorNumber, ErrorNumber2);
 }
 
 
@@ -308,37 +336,57 @@ int sync_lseek(int FileHandler, unsigned int offset, unsigned int origin, unsign
 
 int sync_mkdir(const char * cDirectory, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_mkdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
+    int __mkdir(const char * cDirectory, unsigned int *ErrorNumber) {
+        return _mkdir(cDirectory, ErrorNumber);
+    }
+    SafeProcessRun(__mkdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
 }
 
 
 int sync_rmdir(const char * cDirectory, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(_rmdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
+    int __rmdir(const char * cDirectory, unsigned int *ErrorNumber) {
+        return _rmdir(cDirectory, ErrorNumber);
+    }
+    SafeProcessRun(__rmdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
 }
 
 
 int sync_isdir(const char * cDirectory, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(isdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
+    int _isdir(const char * cDirectory, unsigned int *ErrorNumber) {
+        return isdir(cDirectory, ErrorNumber);
+    }
+
+    SafeProcessRun(_isdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
 }
 
 
 /* Find files */
 
-int sync_FindFirstFile(DIR_ENTRY *DIRENTRY, const char *mask, unsigned int *ErrorNumber)
+int sync_FindFirstFile(DIR_ENTRY *dentry, const char *mask, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(FindFirstFile, int, NU_SYNCHRONIZED_PROC, 3, DIRENTRY, mask, ErrorNumber);
+    int _FindFirstFile(DIR_ENTRY *dentry, const char *mask, unsigned int *ErrorNumber) {
+        return FindFirstFile(dentry, mask, ErrorNumber);
+    }
+
+    SafeProcessRun(_FindFirstFile, int, NU_SYNCHRONIZED_PROC, 3, dentry, mask, ErrorNumber);
 }
 
-int sync_FindNextFile(DIR_ENTRY *DIRENTRY, unsigned int *ErrorNumber)
+int sync_FindNextFile(DIR_ENTRY *dentry, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(FindNextFile, int, NU_SYNCHRONIZED_PROC, 2, DIRENTRY, ErrorNumber);
+    int _FindNextFile(DIR_ENTRY *dentry, unsigned int *ErrorNumber) {
+        return FindNextFile(dentry, ErrorNumber);
+    }
+    SafeProcessRun(_FindNextFile, int, NU_SYNCHRONIZED_PROC, 2, dentry, ErrorNumber);
 }
 
-int sync_FindClose(DIR_ENTRY *DIRENTRY, unsigned int *ErrorNumber)
+int sync_FindClose(DIR_ENTRY *dentry, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(FindClose, int, NU_SYNCHRONIZED_PROC, 2, DIRENTRY, ErrorNumber);
+    int _FindClose(DIR_ENTRY *dentry, unsigned int *ErrorNumber) {
+        return FindClose(dentry, ErrorNumber);
+    }
+    SafeProcessRun(_FindClose, int, NU_SYNCHRONIZED_PROC, 2, dentry, ErrorNumber);
 }
 
 
@@ -347,55 +395,79 @@ int sync_FindClose(DIR_ENTRY *DIRENTRY, unsigned int *ErrorNumber)
 
 int sync_GetFileStats(const char *cFileName, FSTATS * StatBuffer, unsigned int *errornumber)
 {
-    SafeProcessRun(GetFileStats, int, NU_SYNCHRONIZED_PROC, 3, cFileName, StatBuffer, errornumber);
+    int _GetFileStats(const char *cFileName, FSTATS * StatBuffer, unsigned int *errornumber) {
+        return GetFileStats(cFileName, StatBuffer, errornumber);
+    }
+    SafeProcessRun(_GetFileStats, int, NU_SYNCHRONIZED_PROC, 3, cFileName, StatBuffer, errornumber);
 }
 
 
 int sync_GetFileAttrib(const char *cFileName, unsigned char *cAttribute, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(GetFileAttrib, int, NU_SYNCHRONIZED_PROC, 3, cFileName, cAttribute, ErrorNumber);
+    int _GetFileAttrib(const char *cFileName, unsigned char *cAttribute, unsigned int *ErrorNumber) {
+        return GetFileAttrib(cFileName, cAttribute, ErrorNumber);
+    }
+
+    SafeProcessRun(_GetFileAttrib, int, NU_SYNCHRONIZED_PROC, 3, cFileName, cAttribute, ErrorNumber);
 }
 
 
 int sync_SetFileAttrib(const char *cFileName, unsigned char cAttribute, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(SetFileAttrib, int, NU_SYNCHRONIZED_PROC, 3, cFileName, cAttribute, ErrorNumber);
+    int _SetFileAttrib(const char *cFileName, unsigned char cAttribute, unsigned int *ErrorNumber) {
+        return SetFileAttrib(cFileName, cAttribute, ErrorNumber);
+    }
+    SafeProcessRun(_SetFileAttrib, int, NU_SYNCHRONIZED_PROC, 3, cFileName, cAttribute, ErrorNumber);
 }
 
 
 
-IMGHDR *crtimgfrompng(const char *file, int type)
-{
-    return CreateIMGHDRFromPngFile(file, type);
-}
+
 
 IMGHDR *sync_CreateIMGHDRFromPngFile(const char *file, int type)
 {
+    IMGHDR *crtimgfrompng(const char *file, int type) {
+        return CreateIMGHDRFromPngFile(file, type);
+    }
     SafeProcessRun(crtimgfrompng, IMGHDR *, NU_SYNCHRONIZED_PROC, 2, file, type);
 }
 
 
 int sync_setfilesize(int FileHandler, unsigned int iNewFileSize, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(setfilesize, int, NU_SYNCHRONIZED_PROC, 3, FileHandler, iNewFileSize, ErrorNumber);
+    int _setfilesize(int FileHandler, unsigned int iNewFileSize, unsigned int *ErrorNumber) {
+        return setfilesize(FileHandler, iNewFileSize, ErrorNumber);
+    }
+
+    SafeProcessRun(_setfilesize, int, NU_SYNCHRONIZED_PROC, 3, FileHandler, iNewFileSize, ErrorNumber);
 }
 
 
 int sync_fmove(const char * SourceFileName, const char * DestFileName, unsigned int *ErrorNumber)
 {
-    SafeProcessRun(fmove, int, NU_SYNCHRONIZED_PROC, 3, SourceFileName, DestFileName, ErrorNumber);
+    int _fmove(const char * SourceFileName, const char * DestFileName, unsigned int *ErrorNumber) {
+        return fmove(SourceFileName, DestFileName, ErrorNumber);
+    }
+    SafeProcessRun(_fmove, int, NU_SYNCHRONIZED_PROC, 3, SourceFileName, DestFileName, ErrorNumber);
 }
 
 
-Elf32_Exec* sync_elfopen(const char* filename)
+Elf32_Exec *sync_elfopen(const char* filename)
 {
-    SafeProcessRun(elfopen, Elf32_Exec *, NU_SYNCHRONIZED_PROC, 1, filename);
+    Elf32_Exec *_elfopen(const char* filename) {
+        return elfopen(filename);
+    }
+
+    SafeProcessRun(_elfopen, Elf32_Exec *, NU_SYNCHRONIZED_PROC, 1, filename);
 }
 
 
 int sync_ExecuteFile(WSHDR *file, WSHDR *mime, void *d)
 {
-    SafeProcessRun(ExecuteFile, int, NU_SYNCHRONIZED_PROC, 3, file, mime, d);
+    int _ExecuteFile(WSHDR *file, WSHDR *mime, void *d) {
+        return ExecuteFile(file, mime, d);
+    }
+    SafeProcessRun(_ExecuteFile, int, NU_SYNCHRONIZED_PROC, 3, file, mime, d);
 }
 
 

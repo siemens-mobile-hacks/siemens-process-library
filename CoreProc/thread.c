@@ -6,6 +6,7 @@
 #include <spl/mutex.h>
 #include <spl/waitcondition.h>
 #include <spl/process.h>
+#include <spl/mutex.h>
 
 
 typedef struct
@@ -239,15 +240,16 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
 
     {
         free(task);
-        free(stack);
+        if(conf->is_stack_freeable)
+            free(stack);
 
         freeCoreThreadData(thread->t.id);
         leaveProcessCriticalCode(pid);
         return -2;
     }
 
-    thread->start_wait_cond = createWaitCond("thread_wait");
-    thread->exit_wait_cond = createWaitCond("thread_wait");
+    thread->start_wait_cond = createAdvWaitCond("thread_wait", 0);
+    thread->exit_wait_cond = createAdvWaitCond("thread_wait", 0);
 
     if(run)
         NU_Resume_Task(task);

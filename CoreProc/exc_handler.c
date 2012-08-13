@@ -110,8 +110,11 @@ void *get_stack_pointer_from_proc(int pid)
 
 /* Общий обработчик исключений и ошибок */
 __attribute__((__noreturn__))
-void AbortCommonHandler(int pid, int tid, unsigned long lr, unsigned long cpsr, int type)
+void AbortCommonHandler(int id, unsigned long lr, unsigned long cpsr, int type)
 {
+    // передал нахер через 1н регистр...
+    int pid = id >> 16 & 0xffff;
+    int tid = id & 0xffff;
     char *s = 0, *ss = 0;
 
     //Выключаем вытеснение (многозадачность)
@@ -160,8 +163,8 @@ void exception_handler()
     EXC_QUEUE *eq = malloc(sizeof(EXC_QUEUE));
     char msg[256] = {0};
     int rem_id = GetExcQueueElement(eq);
-    int pid = eq->pid;
-    int tid = eq->tid;
+    short pid = eq->pid;
+    short tid = eq->tid;
     const char *task_name = pidName(pid);
 
     if(!task_name)
@@ -210,7 +213,7 @@ void exception_handler()
 
 
     free(eq);
-    printf_nlock("\033[1m\033[31mException: type: %d\npid: %d\ntid: %d\033[0m\n", eq->type, eq->pid, eq->tid);
+    printf_nlock("\033[1m\033[31mException: %s\033[0m\n", msg);
 
     kill_hisr_chek(pid, tid, -1, 1);
 
