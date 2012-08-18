@@ -8,6 +8,7 @@ CoreProc/elf.cbp -text svneol=unset#application/xml
 CoreProc/exc_handler.c -text
 CoreProc/exc_vector.c -text
 CoreProc/exc_vectors.s -text
+CoreProc/exe/libspl.so -text svneol=unset#application/x-sharedlib
 CoreProc/fs.c -text
 CoreProc/gbs_tweak.c -text
 CoreProc/gui.c -text
@@ -1309,6 +1310,7 @@ tests/RadioSI/config_data.c -text
 tests/RadioSI/decoder.c -text
 tests/RadioSI/decoder.h -text
 tests/RadioSI/elf.cbp -text svneol=unset#application/xml
+tests/RadioSI/exe/radiosi_nsg.elf -text svneol=unset#application/x-executable
 tests/RadioSI/faad/config.h -text
 tests/RadioSI/faad/src/Makefile.am -text
 tests/RadioSI/faad/src/Makefile.in -text
