@@ -3,22 +3,31 @@
 #include <swilib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 #include <spl/memctl.h>
 #include <spl/coreevent.h>
+#include <spl/io.h>
+#include <spl/pipe.h>
 #include "stream.h"
 #include <limits.h>
 #include <ctype.h>
+#include "bufferizer.h"
 #include "socket.h"
 
+void report_bug(const char *text);
 void parse_info(const char *info);
 void updateStreamTitle(const char *);
 
-
-FILE *StreamFD = 0;
+extern const int bufferized_size;
+extern char buffer_status[56];
+extern char bug_report[128];
+int StreamFD = -1, socket_fd = -1;
 int local_stream_type = -1;
 int icy_metaint = 0, block = 0;
 extern char icy_track[256];
-
+int pipe_fd = -1;
+int state_bufferizing = 0;
+struct BufferizedStream *bstream = 0;
 
 struct unget_data
 {
@@ -29,87 +38,9 @@ struct unget_data
 };
 
 
-#define stream_read(d, s) fread(d, 1, s, StreamFD)
-#define stream_close() fclose(StreamFD)
-/*
-struct unget_data udata = {0, 0, 0, 0};
+#define stream_read(d, s) read(StreamFD, d, s)
+#define stream_close() close(StreamFD)
 
-ssize_t stream_read(void *data, size_t size)
-{
-    int readed = 0;
-    if(udata.flushed > 0 && udata.seek < udata.flushed) {
-        if(udata.flushed-udata.seek > size) {
-            memcpy(data, udata.data+udata.seek, size);
-            udata.seek += size;
-            if(udata.seek == udata.flushed) {
-                udata.seek = 0;
-                udata.flushed = 0;
-            }
-            return size;
-        }
-
-        memcpy(data, udata.data+udata.seek, udata.flushed-udata.seek);
-        readed += udata.flushed-udata.seek;
-
-        udata.flushed = 0;
-        udata.seek = 0;
-
-        int r = fread(data+readed, 1, size-readed, StreamFD);
-
-        return r > 0? r+readed : readed;
-    }
-
-    return fread(data, 1, size-readed, StreamFD);
-}
-
-
-int stream_unget_data(const void *data, size_t size)
-{
-    if(udata.flushed > 0)
-    {
-        int seek = udata.flushed - udata.seek;
-        memmove(udata.data, udata.data+udata.seek, seek);
-        udata.seek = 0;
-
-
-        if(udata.size < size) {
-            udata.data = realloc(udata.data, size+56);
-            udata.size = size+56;
-        }
-
-        memcpy(udata.data+seek, data, size);
-        udata.flushed = seek+size;
-        return size;
-    }
-
-    if(udata.size > 0) {
-        if(udata.size < size) {
-            udata.data = realloc(udata.data, size+56);
-            udata.size = size+56;
-        }
-
-        memcpy(udata.data, data, size);
-        udata.flushed = size;
-        udata.seek = 0;
-        return size;
-    }
-
-    udata.data = malloc(size+56);
-    udata.size = size+56;
-    udata.flushed = size;
-    udata.seek = 0;
-    memcpy(udata.data, data, size);
-    return size;
-}
-
-
-int stream_close()
-{
-    if(udata.data)
-        free(udata.data);
-
-    memset(&udata, 0, sizeof udata);
-}*/
 
 
 int parse_url(const char *url, char **host, unsigned int *ip, char **request_location, unsigned int *port)
@@ -148,11 +79,11 @@ int parse_url(const char *url, char **host, unsigned int *ip, char **request_loc
             request_location_start = host_end+strlen(host_end);
 
         sscanf(host_end+1, "%d", port);
-        printf("port: %d\n", *port);
     } else {
         request_location_start = (char*)host_end;
         *port = 80;
     }
+    printf("port: %d\n", *port);
 
     if(request_location_start) {
         *request_location = strdup(request_location_start);
@@ -169,10 +100,13 @@ static int open_witch_redirections(const char *location, char *data, int *sz)
     char *host, *req;
     unsigned int ip = -1;
     unsigned int port = -1;
+    const char *flocation = location;
+    char reqhost[256], refer[256];
 
 again:
 
     printf("location: %s\n", location);
+    strncpy(refer, location, 256);
     if( parse_url(location, &host, &ip, &req, &port) ) {
         return -1;
     }
@@ -182,11 +116,15 @@ again:
     int sock;
     if(host) {
         printf("Host: %s\n", host);
+        strcpy(reqhost, host);
         sock = socket_open_by_host(host, port);
         free(host);
     }
     else if((int)ip != -1) {
+        struct in_addr adr;
+        adr.s_addr = ip;
         printf("Ip: %d\n", ip);
+        strcpy(reqhost, inet_ntoa(adr));
         sock = socket_open_by_ip(ip, port);
     } else {
         ShowMSG(1, (int)"Unknow url");
@@ -203,11 +141,11 @@ again:
     printf("req: %s\n", req);
     char request[1024*2] = {0}, ansver[1024*4] = {0};
     int len = sprintf(request, "GET %s HTTP/1.0\r\n"
-                     "Host: online-hitfm.tavrmedia.ua\r\n"
+                     "Host: %s\r\n"
                      "User-Agent: Siemens HitFM player\r\n"
-                     "Referer: http://online-hitfm.tavrmedia.ua\r\n"
+                     "Referer: %s\r\n"
                      "Icy-MetaData: 1\r\n"
-                     "Connection: keep_alive\r\n\r\n", req);
+                     "Connection: keep_alive\r\n\r\n", req, reqhost, refer);
 
     free(req);
 
@@ -260,10 +198,11 @@ again:
 }
 
 
-static FILE *open_stream_socket(const char *location)
+static int open_stream_socket(const char *location)
 {
     char ansver[1024];
     int len = 0;
+    int fd;
     int sock = open_witch_redirections(location, ansver, &len);
 
     if(sock < 0) {
@@ -271,11 +210,29 @@ static FILE *open_stream_socket(const char *location)
         return 0;
     }
 
-    printf("fdopen..\n");
-    FILE *fp = fdopen(sock, "r");
-    if(!fp) {
-        ShowMSG(1, (int)"fdopen failed");
+    pipe_fd = createPipe(bufferized_size*1024, PIPE_WAIT_FOR_READY_READ);
+    if(pipe_fd < 0) {
+        printf("Cant create pipe!\n");
+        fd = sock;
+    }
+    else  {
+        bstream = createBufferizedStream(pipe_fd, sock, 0);
+        if(!bstream) {
+            printf("Cant create bufferized stream!\n");
+            close(pipe_fd);
+            pipe_fd = -1;
+            fd = sock;
+        }
+        else
+            fd = pipe_fd;
+    }
+
+
+    if(fd < 0) {
+        ShowMSG(1, (int)"open failed");
         close(sock);
+        close(pipe_fd);
+        destroyBufferizedStream(bstream);
         return 0;
     }
 
@@ -299,20 +256,32 @@ static FILE *open_stream_socket(const char *location)
             if(ansver_end < ansver+len){
                 //fprintf(out_stream, "\nneed ungetc\n");
                 char *s = ansver+len;
-
-                /*for(int i=0; i<s-ansver_end; ++i)
-                    fprintf(out_stream, "%X ", ((char*)ansver_end)[i]);*/
-
-                //stream_unget_data(ansver_end, s-ansver_end);
-                //fprintf(out_stream, "\n\n");
             }
         }
 
+        if(bstream) {
+            state_bufferizing = 1;
+            activateBufferizedStream(bstream);
+            printf("Wait for buffer flushed ...\n")
 
-        return fp;
+            sprintf(buffer_status, "Bufferizing...\n");
+            REDRAW();
+
+            waitForPipeFullyFlushed(getStreamHandle(pipe_fd));
+            printf("Done.\n");
+
+            state_bufferizing = 0;
+            sprintf(buffer_status, "Done.\n");
+            REDRAW();
+
+        }
+        socket_fd = sock;
+        return fd;
     }
 
-    fclose(fp);
+    close(sock);
+    close(pipe_fd);
+    destroyBufferizedStream(bstream);
     return 0;
 }
 
@@ -323,12 +292,13 @@ int open_stream(int type, const char *location)
     StreamFD = 0;
     local_stream_type = -1;
     icy_metaint = 0, block = 0;
+    *bug_report = 0;
 
     switch(type)
     {
         case FS_STREAM:
-            StreamFD = fopen(location, "rb");
-            if(!StreamFD)
+            StreamFD = open(location, O_RDONLY);
+            if(StreamFD < 0)
                 return -1;
             local_stream_type = FS_STREAM;
             return FS_STREAM;
@@ -336,7 +306,7 @@ int open_stream(int type, const char *location)
         case INET_STREAM:
         {
             StreamFD = open_stream_socket(location);
-            if(!StreamFD)
+            if(StreamFD < 0)
                 return -1;
 
             local_stream_type = INET_STREAM;
@@ -354,13 +324,15 @@ int read_stream(void *_data, size_t size)
     switch(local_stream_type)
     {
         case FS_STREAM:
-            return fread(data, 1, size, StreamFD);
+            return read(StreamFD, data, size);
 
         case INET_STREAM:
         {
+            //printf("read_stream: %d\n", size);
             int readed = stream_read(data, size);
             if(readed < 0) {
                     printf("Socket problem\n");
+                    report_bug("Socket read problem");
                     return readed;
             }
 
@@ -369,7 +341,6 @@ int read_stream(void *_data, size_t size)
             char *chunk_at = 0;
             char *chunk = 0;
             int chunk_seek = 0;
-
 
             if(icy_metaint > 0 && block >= icy_metaint)
                 goto metadata;
@@ -386,10 +357,11 @@ int read_stream(void *_data, size_t size)
 
                     printf("len: %d\n", len);
                     if(len > 0) {
-                        printf("data: %s\n", chunk_at);
+                        //printf("data: %s\n", chunk_at);
                         chunk = malloc(len+1);
                         if(!chunk) {
                             ShowMSG(1, (int)"Out of memory");
+                            report_bug("No memory available");
                             return -1;
                         }
                     }
@@ -418,8 +390,9 @@ int read_stream(void *_data, size_t size)
                             //else
                                 r = stream_read(chunk+chunk_seek+rd, need_read-rd);
 
-                            if(r < 0) {
+                            if(r < 1) {
                                 free(chunk);
+                                report_bug("Socket can`t read chunk data. Stream aborted.");
                                 return -1;
                             }
                             rd += r;
@@ -445,7 +418,7 @@ int read_stream(void *_data, size_t size)
                         printf("Read complete, copy data...\n");
 
                         if(len > 0) {
-                            if(!memcmp(chunk_at, "StreamTitle='", 13)) {
+                            if(chunk_at && !memcmp(chunk_at, "StreamTitle='", 13)) {
                                 chunk_at += 13;
                                 char *end = strstr(chunk_at, "';");
                                 memcpy(chunk, chunk_at, end-chunk_at);
@@ -467,9 +440,12 @@ int read_stream(void *_data, size_t size)
                 if(readed >= (int)size)
                     break;
 
+
                 int r = stream_read(data+readed, size-readed);
-                if(r < 0) {
+                printf("read_stream: %d - %d\n", r, size);
+                if(r < 1) {
                     printf("Socket problem\n");
+                    report_bug("Socket report about has no data for read.");
                     return readed;
                 }
 
@@ -478,6 +454,10 @@ int read_stream(void *_data, size_t size)
                 readed += r;
             }
 
+            //printf("Read Stream: require %d | %d readed\n", size, readed);
+            if(readed < (int)size) {
+                report_bug("Read aborted or not complete.");
+            }
             return readed;
         }
     }
@@ -491,7 +471,7 @@ int seek_stream(uint32_t to, int type)
     switch(local_stream_type)
     {
         case FS_STREAM:
-            return fseek(StreamFD, to, type);
+            return lseek(StreamFD, to, type);
 
         case INET_STREAM:
             return -1;
@@ -506,17 +486,23 @@ void close_stream()
     switch(local_stream_type)
     {
         case FS_STREAM:
-            fclose(StreamFD);
+            close(StreamFD);
             return;
 
         case INET_STREAM:
-            stream_close();
+
+            destroyBufferizedStream(bstream);
+            close(socket_fd);
+            close(pipe_fd);
             return;
     }
 
     StreamFD = 0;
     local_stream_type = -1;
     icy_metaint = 0, block = 0;
+    pipe_fd = -1;
+    socket_fd = -1;
+    bstream = 0;
 }
 
 
@@ -525,9 +511,9 @@ int size_stream()
     switch(local_stream_type)
     {
         case FS_STREAM:{
-            off_t cur = lseek(fileno(StreamFD), 0, SEEK_CUR);
-            int size =  lseek(fileno(StreamFD), 0, SEEK_END);
-            lseek(fileno(StreamFD), cur, SEEK_SET);
+            off_t cur = lseek(StreamFD, 0, SEEK_CUR);
+            int size =  lseek(StreamFD, 0, SEEK_END);
+            lseek(StreamFD, cur, SEEK_SET);
             return size;
         }
 
@@ -538,3 +524,16 @@ int size_stream()
     return -1;
 }
 
+
+int data_stream_bufferized()
+{
+    switch(local_stream_type)
+    {
+        case FS_STREAM:{
+            return 0;
+        }
+
+        case INET_STREAM:
+            return availablePipeData(getStreamHandle(pipe_fd));
+    }
+}

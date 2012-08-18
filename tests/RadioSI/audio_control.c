@@ -2,6 +2,9 @@
 #include <swilib.h>
 #include "audio_control.h"
 #include <spl/processbridge.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 /*
 const unsigned char WavHdr[44] =
@@ -32,34 +35,24 @@ char audio_control_fake_audio[8192] = {0};
 
 #define PCM_HOOK_FUNC *((unsigned int *)RamAudioHookProc())
 
-#define SafeProcessRun(func, ret_type, run_type, args_cnt, ...)         \
-    void *args = pack_args(args_cnt, __VA_ARGS__);                      \
-    void *retrn = BridgeMessageSend((void *)func, run_type, args);\
-    return (ret_type)retrn;
 
-
-int sync_PlayMelodyInMem(char Unk_0x11, void * MelAddr, int MelSize, int CepId, int Msg, int Unk_0)
+HObj ToObs(int handle)
 {
-    SafeProcessRun(PlayMelodyInMem, int, NU_SYNCHRONIZED_PROC, 6, Unk_0x11, MelAddr, MelSize, CepId, Msg, Unk_0);
-    //return PlayMelodyInMem(Unk_0x11, MelAddr, MelSize, CepId, Msg, Unk_0);
+    if(handle == -1) return 0;
+    HObj Tobj;
+    Tobj = (HObj)GetPlayObjById(handle);
+    if(!Tobj) return 0;
+    int ret = (( int*)Tobj)[0x3d0/4];
+    return ret;
 }
 
 
-int sync_PlayMelody_StopPlayback(int player_id)
-{
-    SafeProcessRun(PlayMelody_StopPlayback, int, NU_SYNCHRONIZED_PROC, 1, player_id);
-    //return PlayMelody_StopPlayback(player_id);
-}
-
-
-int sync_PlayMelody_ChangeVolume(int player_id, int vol)
-{
-    SafeProcessRun(PlayMelody_ChangeVolume, int, NU_SYNCHRONIZED_PROC, 2, player_id, vol);
-    //return PlayMelody_ChangeVolume(player_id, vol);
-}
-
-
-int audio_control_play(int samplerate, short channels, int bits_per_sample, void (*frame_request)(int unk, unsigned short *pcmframe))
+#ifdef NEWSGOLD
+HObj
+#else
+int
+#endif
+audio_control_play(int volume, int samplerate, short channels, int bits_per_sample, void (*frame_request)(int unk, unsigned short *pcmframe))
 {
     PCM_HOOK_FUNC = (unsigned int)(frame_request);
 
@@ -73,14 +66,75 @@ int audio_control_play(int samplerate, short channels, int bits_per_sample, void
     header->data_size = 30*1024*1024;
     header->file_size = header->data_size+44;
 
+
     /* Запускаем буффер на проигрывание */
-    return sync_PlayMelodyInMem( 0x11, audio_control_fake_audio, sizeof(audio_control_fake_audio), MMI_CEPID, 0, 0 );
+/*#ifdef NEWSGOLD
+
+    int err;
+    WSHDR *ws = AllocWS(128);
+    int fd = open("2:\\test.wav", O_CREAT | O_TRUNC | O_WRONLY);
+    write(fd, audio_control_fake_audio, sizeof(audio_control_fake_audio));
+    close(fd);
+
+    wsprintf(ws, "wav");
+    int uid=GetExtUid_ws(ws);
+
+    wsprintf(ws, "2:\\test.wav");
+    HObj pObj = Obs_CreateObject(uid, 0x34, 1, 0xB034, 1, 0, &err);
+    err = Obs_SetInput_File(pObj, 0, ws);
+    FreeWS(ws);
+#ifdef NEWSGOLD
+#ifndef ELKA
+    Obs_Sound_SetPurpose(pObj,0x16);
+#else
+    Obs_Mam_SetPurpose(pObj,0x16);
+#endif
+#else
+    Obs_Mam_SetPurpose(pObj,0x16);
+#endif
+    Obs_Sound_SetVolumeEx(pObj, volume, 1);
+    Obs_Prepare(pObj);
+    Obs_Start(pObj);
+    return pObj;
+#else*/
+    int r = PlayMelodyInMem( 0x11, audio_control_fake_audio, sizeof(audio_control_fake_audio), MMI_CEPID, 0, 0 );
+
+#ifdef NEWSGOLD
+    PlayMelody_ChangeVolume(r, 0);
+    // Мега хак, звук 15-ти ступенчатый через Обс :D
+    char vol = -1;
+    while(vol !=0 ) {
+        Obs_Sound_GetVolume(ToObs(r), &vol);
+        NU_Sleep(10);
+    }
+
+    Obs_Sound_SetVolumeEx(ToObs(r), volume, 0);
+#else
+    PlayMelody_ChangeVolume(r, 0);
+#endif
+
+    return r;
+//#endif
 }
 
 
-void audio_control_destroy(int player_id)
+void audio_control_destroy(
+#ifdef NEWSGOLD
+                           HObj player_id
+#else
+                           int player_id
+#endif
+                          )
 {
-    sync_PlayMelody_StopPlayback(player_id);
+
+/*#ifdef NEWSGOLD
+    Obs_Stop(player_id);
+    Obs_DestroyObject(player_id);
+    _unlink("2:\\test.wav", 0);
+#else*/
+    PlayMelody_StopPlayback(player_id);
+//#endif
+
     PCM_HOOK_FUNC = 0;
 }
 

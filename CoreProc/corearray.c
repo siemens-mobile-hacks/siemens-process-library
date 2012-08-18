@@ -34,6 +34,7 @@ void corearray_init(CoreArray *array, void *empty_cell_fill)
     array->free = __free;
     array->realloc = __realloc;
 
+    corearray_fill_cached(array, array->empty_fill);
 }
 
 

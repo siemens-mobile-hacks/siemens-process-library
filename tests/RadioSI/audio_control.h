@@ -21,12 +21,34 @@ typedef struct
 }wave_header;
 
 
-int audio_control_play(int samplerate, short channels, int bits_per_sample, void (*frame_request)(int unk, unsigned short *pcmframe));
-void audio_control_destroy(int player_id);
+HObj ToObs(int handle);
 
-int sync_PlayMelodyInMem(char Unk_0x11, void * MelAddr, int MelSize, int CepId, int Msg, int Unk_0);
-int sync_PlayMelody_StopPlayback(int player_id);
-int sync_PlayMelody_ChangeVolume(int player_id, int vol);
+#ifdef NEWSGOLD
+HObj
+#else
+int
+#endif
+audio_control_play(int volume, int samplerate, short channels, int bits_per_sample, void (*frame_request)(int unk, unsigned short *pcmframe));
+void audio_control_destroy(
+#ifdef NEWSGOLD
+                           HObj player_id
+#else
+                           int player_id
+#endif
+                           );
+
+/*#ifdef NEWSGOLD
+#define stopPlayBack(player) Obs_Stop(player)
+#define pausePlayBack(player) Obs_Pause(player)
+#define resumePlayBack(player) Obs_Resume(player)
+#define setPlayBackVolume(player, vol) Obs_Sound_SetVolumeEx(player, vol, 0)
+#else*/
+#define stopPlayBack(player) PlayMelody_StopPlayback(player)
+#define pausePlayBack(player) PlayMelody_PausePlayback(player)
+#define resumePlayBack(player) PlayMelody_ResumePlayBack(player)
+#define setPlayBackVolume(player, vol) Obs_Sound_SetVolumeEx(ToObs(player), vol, 0)
+//#endif
+
 
 
 

@@ -12,6 +12,6 @@ int seek_stream(uint32_t to, int type);
 int read_stream(void *data, size_t size);
 int size_stream();
 void close_stream();
-
+int data_stream_bufferized();
 
 #endif

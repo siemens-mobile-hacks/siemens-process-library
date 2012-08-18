@@ -14,6 +14,7 @@ typedef struct
     CoreTask t;
 
     CoreArray ctors, dtors;
+    CoreMutex m_ctor, m_dtor;
     char kill_mode, terminated;
 
     struct {
@@ -23,6 +24,12 @@ typedef struct
 
     struct {
         CoreList list;
+        CoreMutex mutex;
+    } process;
+
+    struct {
+        CoreList list;
+        CoreMutex mutex;
     } threads;
 
     ResCtlData *resData;
@@ -37,6 +44,7 @@ typedef struct
     char hisr_call;
     int kill_state, kill_tryes;
     int sig_from_tid;
+    struct CoreListInode *ppid_inode;
 
     struct {
         CoreMutex mutex;
@@ -74,6 +82,9 @@ void quit();
 
 struct CoreListInode *addProcessThread(int pid, int tid);
 int delProcessThread(int pid, struct CoreListInode *inode);
+
+struct CoreListInode *addProcessToParent(int ppid, int pid);
+int delProcessFromParent(int ppid, struct CoreListInode *inode);
 
 int fullProcessSuspend(int pid);
 int fullProcessResume(int pid);

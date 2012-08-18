@@ -9,6 +9,6 @@ int destroyWaitCond(int wid);
 int waitCondition(int wid);
 int wakeOneWaitCond(int wid);
 int wakeAllWaitConds(int wid);
-int resetWaitCondWaiters(int wid);
+int resetWaitConditions(int wid);
 
 #endif

@@ -319,7 +319,7 @@ int sync_unlink(const char *cFileName, unsigned int *errornumber)
     int __unlink() {
         return _unlink(cFileName, errornumber);
     }
-    SafeProcessRun(__unlink, int, NU_SYNCHRONIZED_PROC, 2, cFileName, errornumber);
+    SafeProcessRun(_unlink, int, NU_SYNCHRONIZED_PROC, 2, cFileName, errornumber);
 }
 
 
@@ -471,5 +471,38 @@ int sync_ExecuteFile(WSHDR *file, WSHDR *mime, void *d)
 }
 
 
+int sync_PlayMelodyInMem(char Unk_0x11, void * MelAddr, int MelSize, int CepId, int Msg, int Unk_0)
+{
+    SafeProcessRun(PlayMelodyInMem, int, NU_SYNCHRONIZED_PROC, 6, Unk_0x11, MelAddr, MelSize, CepId, Msg, Unk_0);
+}
 
+
+int sync_PlayMelody_StopPlayback(int player_id)
+{
+    SafeProcessRun(PlayMelody_StopPlayback, int, NU_SYNCHRONIZED_PROC, 1, player_id);
+}
+
+
+int sync_Obs_CreateObject(int uid_in, int uid_out, int prio, int msg_callback, int emb4, int sync,unsigned int *ErrorNumber)
+{
+    SafeProcessRun(Obs_CreateObject, int, NU_SYNCHRONIZED_PROC, 7, uid_in, uid_out, prio, msg_callback, emb4, sync, ErrorNumber);
+}
+
+
+int sync_Obs_DestroyObject(HObj hObj)
+{
+    SafeProcessRun(Obs_DestroyObject, int, NU_SYNCHRONIZED_PROC, 1, hObj);
+}
+
+
+int sync_Obs_SetInput_File(HObj hObj, int unk_zero, WSHDR *path)
+{
+    SafeProcessRun(Obs_SetInput_File, int, NU_SYNCHRONIZED_PROC, 3, hObj, unk_zero, path);
+}
+
+
+int sync_Obs_Stop(HObj hObj)
+{
+    SafeProcessRun(Obs_Stop, int, NU_SYNCHRONIZED_PROC, 1, hObj);
+}
 

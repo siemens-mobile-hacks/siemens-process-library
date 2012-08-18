@@ -456,9 +456,13 @@ __inl
 int UnRegExplorerExt(REGEXPLEXT const * param1)
 __def( 149, int, param1)
 
+#ifdef __USE_SPL__
+#define PlayMelodyInMem sync_PlayMelodyInMem
+#else
 __inl
 int PlayMelodyInMem(char Unk_0x11, void * MelAddr, int MelSize, int CepId, int Msg, int Unk_0)
 __def( 0x99, int, Unk_0x11, MelAddr, MelSize, CepId, Msg, Unk_0)
+#endif
 
 __inl
 int ChangeVolume(unsigned char Volume)
@@ -531,12 +535,12 @@ __inl
 void *realloc(void *ptr, size_t size)
 __def( 186, void *, ptr, size)
 #endif
-
 #endif
 
 __inl
 void *memset(void *s, int c, size_t n)
 __def( 187, void *, s, c, n)
+
 #endif
 
 __inl
@@ -818,8 +822,8 @@ __def( 0x0124, int, param1)
 
 #endif
 
-#ifdef __NU_API_ELF__
-#define AllocWS NuAllocWS
+#ifdef __USE_SPL__
+#define AllocWS(sz) alloc_ws(getpid(), sz)
 #else
 __inl
 WSHDR * AllocWS (int len)
@@ -838,8 +842,8 @@ __inl
 int  CreateWS (void *_malloc,void *mfree,int len)
 __def( 0x0128, int , _malloc, mfree, len)
 
-#ifdef __NU_API_ELF__
-#define FreeWS NuFreeWS
+#ifdef __USE_SPL__
+#define FreeWS(ws) free_ws(getpid(), ws)
 #else
 __inl
 void  FreeWS (WSHDR *wshdr)
@@ -933,7 +937,7 @@ void  GeneralFunc_flag0 (int id, int cmd)
 __defn( 0x013E, id, cmd)
 
 
-#ifdef __NU_API_ELF__
+#ifdef __USE_SPL__
 #define DirectRedrawGUI sync_DirectRedrawGUI
 #else
 __inl
@@ -2153,17 +2157,29 @@ __inl
 int CalcBitmapSize(short w,short h, char typy)
 __def( 0x258, int, w, h, typy)
 
+#ifdef __USE_SPL__
+#define Obs_CreateObject sync_Obs_CreateObject
+#else
 __inl
 HObj Obs_CreateObject(int uid_in, int uid_out, int prio, int msg_callback, int emb4, int sync,unsigned int *ErrorNumber)
 __def( 0x259, HObj, uid_in, uid_out, prio, msg_callback, emb4, sync, ErrorNumber)
+#endif
 
+#ifdef __USE_SPL__
+#define Obs_DestroyObject sync_Obs_DestroyObject
+#else
 __inl
 int Obs_DestroyObject(HObj hObj)
 __def( 0x25A, int, hObj)
+#endif
 
+#ifdef __USE_SPL__
+#define Obs_SetInput_File sync_Obs_SetInput_File
+#else
 __inl
 int Obs_SetInput_File (HObj hObj, int unk_zero, WSHDR *path)
 __def( 0x25B, int, hObj, unk_zero, path)
+#endif
 
 __inl
 int Obs_GetInputImageSize (HObj hObj, short *w, short *h)
@@ -2209,9 +2225,13 @@ __inl
 int Obs_Resume (HObj hObj)
 __def( 0x266, int, hObj)
 
+#ifdef __USE_SPL__
+#define Obs_Stop sync_Obs_Stop
+#else
 __inl
 int Obs_Stop (HObj hObj)
 __def( 0x267, int, hObj)
+#endif
 
 __inl
 int Obs_Prepare (HObj hObj)

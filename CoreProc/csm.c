@@ -5,7 +5,7 @@
 #include <spl/csm.h>
 #include <spl/gui.h>
 #include <spl/mutex.h>
-
+#include <spl/timer.h>
 
 
 typedef struct {
@@ -28,6 +28,7 @@ typedef struct {
     int pid;
     int minus11;
     unsigned short name_body[128];
+    int can_kill;
 
     void (*onCreate)(int id, CSM_RAM *);
     void (*onClose)(int id, CSM_RAM *);
@@ -117,6 +118,7 @@ void core_csm_create(CSM_RAM *data)
     }
 
     CoreCSM *c = getCoreCSMFormRam(data);
+    c->can_kill = 1;
     if(!c->onCreate)
         return;
 
@@ -162,6 +164,7 @@ void core_csm_destroy(CSM_RAM *data)
 }
 
 
+
 int core_csm_message(CSM_RAM *data, GBS_MSG *msg)
 {
     CoreCSM *c = getCoreCSMFormRam(data);
@@ -194,6 +197,7 @@ int core_csm_message(CSM_RAM *data, GBS_MSG *msg)
 }
 
 
+
 int createCSM(const char *name, int type,
               void (*onCreate)(int id, CSM_RAM *),
               void (*onClose)(int id, CSM_RAM *),
@@ -221,6 +225,7 @@ int createCSM(const char *name, int type,
     data->minus11 = -11;
     data->pid = getpid();
     data->dt_id = -1;
+    data->can_kill = 0;
 
 #ifdef NEWSGOLD
     data->maincsm.zero1 = 0;
@@ -240,6 +245,7 @@ int createCSM(const char *name, int type,
     data->maincsm_name.isbody_allocated = 0;
     data->maincsm_name.maxlen = 128;
     data->maincsm_name.unk1 = 0;
+
 
     wsprintf(&data->maincsm_name, "%t", name);
 
@@ -263,8 +269,10 @@ int createCSM(const char *name, int type,
         free_csm_id(id);
     } else {
         data->dt_id = addProcessDtors(data->pid, (void (*)(void*, void*))closeCSM, (void *)id, 0);
-        NU_Sleep(15); // хак, если сразу вызвать клосксм - он не убивается,
-                      // а это может понадобится если процесс умрёт не естественной смертью сразу после создания.
+
+        // хак, если сразу вызвать клосксм - он не убивается,
+        // а это может понадобится если процесс умрёт не естественной смертью сразу после создания.
+        //data->check_tmr_id = timerStart(20, csm_kill_time_check, data);
     }
     leaveProcessCriticalCode(pid);
 
@@ -283,8 +291,11 @@ int closeCSM(int id)
 
     eraseProcessDtor(csm->pid, csm->dt_id);
 
-    if(csm->csmID)
+    if(csm->csmID) {
+        while(csm->can_kill == 0)
+            NU_Sleep(2);
         CloseCSM(csm->csmID);
+    }
     csm->used = 0;
 
     return 0;
@@ -300,3 +311,13 @@ int bindGUIToCSM(int id, int real_gui_id)
     return csm->guiId = real_gui_id;
 }
 
+
+int setNameCSM(int id, const char *name)
+{
+    CoreCSM *csm = getCoreCSMData(id);
+    if(!csm)
+        return -1;
+
+    wsprintf(&csm->maincsm_name, "%t", name);
+    return 0;
+}

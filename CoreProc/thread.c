@@ -155,16 +155,14 @@ static void thread_handle(int argc, void *argv)
 
     int swc = thread->start_wait_cond;
     thread->start_wait_cond = -1;
+    int ewc = thread->exit_wait_cond;
 
     wakeAllWaitConds(swc);
     destroyWaitCond(swc);
 
-    thread->handle(thread->data);
+    thread->retcode = thread->handle(thread->data);
 
-
-    int ewc = thread->exit_wait_cond;
     thread->exit_wait_cond = -1;
-
     wakeAllWaitConds(ewc);
     destroyWaitCond(ewc);
 }
@@ -216,6 +214,7 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     int prio = conf->prio? conf->prio : DEFAULT_PRIO;
     int stack_size = conf->stack_size? conf->stack_size : DEFAULT_STACK_SIZE;
     void *stack = conf->stack? conf->stack : malloc(stack_size);
+    conf->is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
 
     NU_TASK *task = malloc(sizeof(*task));
     memset(task, 0, sizeof *task);
@@ -224,7 +223,7 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     thread->t.stack_size = stack_size;
     thread->ppid = pid;
     thread->t.type = 2;
-    thread->t.is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
+    thread->t.is_stack_freeable = conf->is_stack_freeable;
     thread->handle = handle;
     thread->data = data;
     thread->retcode = 0;
@@ -334,7 +333,7 @@ int waitForThreadStarted(int _tid)
 int waitForThreadFinished(int _tid, int *retcode)
 {
     CoreThread *thread = getThreadData(_tid);
-    if(!thread || thread->t.id < 0)
+    if(!thread || thread->t.id != _tid)
         return -1;
 
     waitCondition(thread->exit_wait_cond);

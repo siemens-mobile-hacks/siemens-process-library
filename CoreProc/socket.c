@@ -7,7 +7,6 @@
 #include <spl/corearray.h>
 #include <fcntl.h>
 #include <spl/socket.h>
-#include <spl/ioresctl.h>
 #include <spl/io.h>
 
 
@@ -290,7 +289,7 @@ static void gethostbyname_impl(dnrImpl *dnr)
 
 static ssize_t __read(int fd, void *data, size_t size)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -301,7 +300,7 @@ static ssize_t __read(int fd, void *data, size_t size)
 
 static ssize_t __write(int fd, const void *data, size_t size)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -312,7 +311,7 @@ static ssize_t __write(int fd, const void *data, size_t size)
 
 static int __close(int fd)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -323,7 +322,7 @@ static int __close(int fd)
 
 static int __flush(int fd)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -338,7 +337,7 @@ static off_t __lseek(int fd, off_t offset, int whence)
     UNUSED(offset);
     UNUSED(whence);
 
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -383,7 +382,7 @@ int socket(int af, int type, int protocol)
     if(impl.ret > -1) {
         enterProcessCriticalCode(pid);
         int iofd = open_fd();
-        idStream *s = getStreamData(iofd);
+        idStream *s = getStreamData(getpid(), iofd);
         if(!s) {
             _sclose(impl.ret);
             leaveProcessCriticalCode(pid);
@@ -426,7 +425,7 @@ int connect(int sock, struct sockaddr *name, int namelen)
     } ConnectImpl;
 
 
-    idStream *s = getStreamData(sock);
+    idStream *s = getStreamData(getpid(), sock);
     if(!s || s->id < 0)
         return -1;
 
@@ -614,6 +613,7 @@ int _sread(int fd, void *data, size_t size, int flag)
     //printf("socket read ...\n");
     void __read(WriteData *d) {
         d->ret = recv(d->sock, d->data, d->size, d->flag);
+
         //printf("socket subread complete\n");
         NU_Release_Semaphore(&d->wait);
     }

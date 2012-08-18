@@ -9,17 +9,19 @@
 
 typedef struct {
     CoreEvent head;
-    void (*callback)(int);
+    void (*callback)(int, void *);
+    void *userdata;
 }TimerEvent __attribute__((aligned(4)));
 
 struct TimerData {
     NU_TIMER timer;
-    void (*callback)(int);
+    void (*callback)(int, void *);
     int pid;
     int sended;
     int dt_id;
     char last;
-} __attribute__((aligned(4)));
+    void *userdata;
+};
 
 static struct TimerData timers[128] = {};
 
@@ -60,7 +62,7 @@ static void timer_displatcher(TimerEvent *event)
         return;
     }
 
-    event->callback(event->head.id);
+    event->callback(event->head.id, event->userdata);
 
 }
 
@@ -72,13 +74,14 @@ static void timer_handle(unsigned long id) //?
     event.head.type = TIMER_EVENT;
     event.callback = timers[id].callback;
     event.head.dispatcher = (void (*)(void*))timer_displatcher;
+    event.userdata = timers[id].userdata;
 
     timers[id].sended++;
     sendEvent(timers[id].pid, &event, sizeof event);
 }
 
 
-int timerStart(unsigned long time, void (*callback)(int))
+int timerStart(unsigned long time, void (*callback)(int, void *), void *userdata)
 {
     int id = find_best_id(), err = 0; // get best id
     if(id < 0)
@@ -95,6 +98,7 @@ int timerStart(unsigned long time, void (*callback)(int))
     timer->pid = pid;
     timer->sended = 0;
     timer->last = 0;
+    timer->userdata = userdata;
 
 
     err = NU_Create_Timer((NU_TIMER*)timer, "ololo", timer_handle, id, time, time, NU_ENABLE_TIMER);

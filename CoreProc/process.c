@@ -291,8 +291,28 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         proc->kill_state++;
     }
 
+
     printf("State: 3\n");
     if(proc->kill_state == 3) {
+        struct CoreListInode *inode = proc->process.list.first;
+        while(inode)
+        {
+            int __pid = (int)inode->self;
+            printf("Destroying process %d...\n", __pid);
+            kill(__pid, 0);
+	    waitForProcessFinished(__pid, 0);
+            printf("process %d destroyed\n", __pid);
+
+            if(inode != proc->process.list.first)
+                inode = proc->process.list.first;
+            else
+                inode = inode->next;
+        }
+        proc->kill_state++;
+    }
+
+    printf("State: 4\n");
+    if(proc->kill_state == 4) {
         struct CoreListInode *inode = proc->threads.list.first;
         while(inode)
         {
@@ -310,8 +330,8 @@ static void kill_impl(int _pid, int tid, int code, int lock)
     }
 
 
-    printf("State: 4\n");
-    if(proc->kill_state == 4) {
+    printf("State: 5\n");
+    if(proc->kill_state == 5) {
         printf("Dtors run\n");
         TorsList *val;
         CoreArray *array = &proc->dtors;
@@ -326,18 +346,25 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         }
         proc->kill_state++;
         printf("Dtors complete\n");
-    }
 
-    printf("State: 5\n");
-    if(proc->kill_state == 5) {
-        corearray_release(&proc->ctors);
-        corearray_release(&proc->dtors);
-        corearray_release(&proc->idUsersData);
-        proc->kill_state ++;
     }
 
     printf("State: 6\n");
     if(proc->kill_state == 6) {
+        corearray_release(&proc->ctors);
+        corearray_release(&proc->dtors);
+        corearray_release(&proc->idUsersData);
+
+        destroyMutex(&proc->m_ctor);
+        destroyMutex(&proc->m_dtor);
+        destroyMutex(&proc->process.mutex);
+        destroyMutex(&proc->threads.mutex);
+
+        proc->kill_state ++;
+    }
+
+    printf("State: 7\n");
+    if(proc->kill_state == 7) {
         printf("detachResCtl ...\n");
         detachResCtl(_pid, &proc->resData, proc->resAttached);
         printf("detachResCtl complete!\n");
@@ -351,13 +378,20 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         free(d);
     }
 
-    printf("State: 7 : %d\n", proc->kill_state);
-    if(proc->kill_state == 7) {
+    printf("State: 8\n");
+    if(proc->kill_state == 8) {
         printf("kill_process(%d)\n", _pid);
         SUBPROC(kill_process, _pid);
         proc->kill_state ++;
     }
 
+    printf("State: 9 : %d\n", proc->kill_state);
+    if(proc->kill_state == 9) {
+        if(proc->ppid_inode) {
+            delProcessFromParent(proc->ppid, proc->ppid_inode);
+            proc->kill_state ++;
+        }
+    }
 
     int ex_wc = proc->exit_wait_cond;
     proc->exit_wait_cond = -1;
@@ -399,6 +433,7 @@ static void handle(int argc, void *argv)
     proc->t.mem = mem;
 
     corelist_init(&proc->threads.list);
+    corelist_init(&proc->process.list);
     corearray_init(&proc->idUsersData, NULL);
     proc->resAttached = attachResCtl(mpid, &proc->resData);
 
@@ -605,9 +640,15 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
 
     corearray_init(&proc->ctors, NULL);
     corearray_init(&proc->dtors, NULL);
+    createMutex(&proc->m_ctor);
+    createMutex(&proc->m_dtor);
+    createMutex(&proc->process.mutex);
+    createMutex(&proc->threads.mutex);
 
     proc->start_wait_cond = createAdvWaitCond("proc_wait", 0);
     proc->exit_wait_cond = createAdvWaitCond("proc_wait", 0);
+
+    addProcessToParent(proc->ppid, _pid);
 
     if(run)
         NU_Resume_Task(task);
@@ -748,7 +789,10 @@ int addProcessCtors(int _pid, void (*h)(void *, void *), void *data1, void *data
     if(!proc || proc->t.id < 0)
         return -1;
 
-    return addProcessTors(&proc->ctors, h, data1, data2);
+    lockMutex(&proc->m_ctor);
+    int r = addProcessTors(&proc->ctors, h, data1, data2);
+    unlockMutex(&proc->m_ctor);
+    return r;
 }
 
 
@@ -758,7 +802,10 @@ int addProcessDtors(int _pid, void (*h)(void *, void *), void *data1, void *data
     if(!proc || proc->t.id != _pid)
         return -1;
 
-    return addProcessTors(&proc->dtors, h, data1, data2);
+    lockMutex(&proc->m_dtor);
+    int r = addProcessTors(&proc->dtors, h, data1, data2);
+    unlockMutex(&proc->m_dtor);
+    return r;
 }
 
 
@@ -781,7 +828,10 @@ struct CoreListInode *addProcessThread(int _pid, int tid)
     if(!proc || proc->t.id < 0)
         return 0;
 
-    return corelist_push_back(&proc->threads.list, (void *)tid);
+    lockMutex(&proc->threads.mutex);
+    struct CoreListInode *r = corelist_push_back(&proc->threads.list, (void *)tid);
+    unlockMutex(&proc->threads.mutex);
+    return r;
 }
 
 
@@ -791,10 +841,37 @@ int delProcessThread(int _pid, struct CoreListInode *inode)
     if(!proc || proc->t.id < 0 || !inode)
         return -1;
 
+    lockMutex(&proc->threads.mutex);
     corelist_del_inode(&proc->threads.list, inode);
+    unlockMutex(&proc->threads.mutex);
     return 0;
 }
 
+
+struct CoreListInode *addProcessToParent(int ppid, int pid)
+{
+    CoreProcess *proc = coreProcessData(ppid);
+    if(!proc || proc->t.id != ppid)
+        return 0;
+
+    lockMutex(&proc->process.mutex);
+    struct CoreListInode *r = corelist_push_back(&proc->process.list, (void *)pid);
+    unlockMutex(&proc->process.mutex);
+    return r;
+}
+
+
+int delProcessFromParent(int ppid, struct CoreListInode *inode)
+{
+    CoreProcess *proc = coreProcessData(ppid);
+    if(!proc || proc->t.id != ppid || !inode)
+        return -1;
+
+    lockMutex(&proc->process.mutex);
+    corelist_del_inode(&proc->threads.list, inode);
+    unlockMutex(&proc->process.mutex);
+    return 0;
+}
 
 
 const char *pidName(int _pid)

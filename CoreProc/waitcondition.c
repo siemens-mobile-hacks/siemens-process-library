@@ -161,7 +161,7 @@ int wakeAllWaitConds(int wid)
 }
 
 
-int resetWaitCondWaiters(int wid)
+int resetWaitConditions(int wid)
 {
     WaitCondition *wc = getWcData(wid);
     if(!wc || !wc->used)

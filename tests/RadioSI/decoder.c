@@ -21,6 +21,7 @@
 
 
 static int quiet = 0;
+void report_bug(const char *text);
 
 static void faad_fprintf(FILE *stream, const char *fmt, ...)
 {
@@ -449,7 +450,6 @@ void* get_audio_16bit(void *sample_buffer, char *data, unsigned int samples, int
 
 void *request_frame( int *_samples, int *_chanels, int *_chanel_mask)
 {
-    char *buffer = 0;
     sample_buffer = NeAACDecDecode(hDecoder, &frameInfo,
             b.buffer, b.bytes_into_buffer);
 
@@ -458,8 +458,8 @@ void *request_frame( int *_samples, int *_chanels, int *_chanel_mask)
 
     if (frameInfo.error > 0)
     {
-        fprintf(stderr, "Error: %s\n",
-                faacDecGetErrorMessage(frameInfo.error));
+        if(frameInfo.error != 5)
+            report_bug(NeAACDecGetErrorMessage(frameInfo.error));
     }
 
 

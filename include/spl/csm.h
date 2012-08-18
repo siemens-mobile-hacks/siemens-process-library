@@ -15,5 +15,6 @@ int createCSM(const char *name, int type,
 
 int closeCSM(int id);
 int bindGUIToCSM(int id, int gui_id);
+int setNameCSM(int id, const char *name);
 
 #endif

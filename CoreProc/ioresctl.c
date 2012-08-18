@@ -3,7 +3,6 @@
 #include <spl/resctl.h>
 #include <spl/corelist.h>
 #include <spl/process.h>
-#include <spl/ioresctl.h>
 #include <spl/io.h>
 
 

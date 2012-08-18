@@ -102,6 +102,9 @@
 		<Unit filename="mutex.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="pipe.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="process.c">
 			<Option compilerVar="CC" />
 		</Unit>

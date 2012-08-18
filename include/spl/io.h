@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "corelist.h"
+#include "process.h"
 
 enum {
     FS_STREAM,
@@ -25,7 +26,6 @@ typedef struct
     int (*flush)(int fd);
     int (*close)(int fd);
 
-    struct CoreListInode *resctl_inode;
     short pid;
 } idStream;
 
@@ -33,8 +33,15 @@ typedef struct
 
 int open_fd();
 int close_fd(int fd);
-idStream *getStreamData(int fd);
+idStream *getStreamData(int pid, int fd);
 
+static inline int getStreamHandle(int fd) {
+    idStream *is = getStreamData(getpid(), fd);
+    if(!is)
+        return -1;
+
+    return is->fd;
+}
 
 ssize_t read(int fd, void *buf, size_t len);
 ssize_t write(int fd, const void *buf, size_t len);

@@ -62,7 +62,7 @@ static int __open(const char *file, int flags, ...)
 
 static ssize_t __read(int fd, void *data, size_t size)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -73,7 +73,7 @@ static ssize_t __read(int fd, void *data, size_t size)
 
 static ssize_t __write(int fd, const void *data, size_t size)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -84,7 +84,7 @@ static ssize_t __write(int fd, const void *data, size_t size)
 
 static int __close(int fd)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -95,7 +95,7 @@ static int __close(int fd)
 
 static int __flush(int fd)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -106,7 +106,7 @@ static int __flush(int fd)
 
 static off_t __lseek(int fd, off_t offset, int whence)
 {
-    idStream *s = getStreamData(fd);
+    idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
@@ -128,7 +128,7 @@ int open(const char *file, int flags, ...)
         return fd;
     }
 
-    idStream *s = getStreamData(stream);
+    idStream *s = getStreamData(getpid(), stream);
     if(!s) {
         close_fd(stream);
         sync_close(fd, 0);

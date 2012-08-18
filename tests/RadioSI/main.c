@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <spl/process.h>
+#include <spl/processbridge.h>
 #include <spl/coreevent.h>
 #include <spl/thread.h>
 #include <spl/task.h>
@@ -11,6 +12,8 @@
 #include <spl/gui.h>
 #include <spl/queue.h>
 #include <spl/lcd_primitives.h>
+#include <ep3/loader.h>
+#include "stream.h"
 #include "decoder.h"
 #include "audio.h"
 #include "audio_control.h"
@@ -31,7 +34,13 @@ char clrBlack[]= {0x00,0x00,0x00,0x64};
 char clrGreen[]= {0x00,0xFF,0x00,0x64};
 char clrRed[]  = {0xFF,0x00,0x00,0x64};
 int scr_w,scr_h;
+
+#ifdef NEWSGOLD
+HObj player = 0;
+#else
 int player = -1;
+#endif
+
 int switches = 0;
 int sample_fmt = 16;
 int decode_thread = -1;
@@ -51,7 +60,7 @@ char fname[128];
 int flush_buffer = 0;
 
 
-#define thread_stack_size 300*1024
+#define thread_stack_size 350*1024
 char stack_data[thread_stack_size] = {0};
 
 typedef struct
@@ -64,14 +73,17 @@ typedef struct
 }queue_struct __attribute__((aligned(4)));
 
 #define queue_struct_size sizeof(queue_struct)/4
-#define queue_size  10* sizeof(queue_struct)
+#define queue_size  20* sizeof(queue_struct)
 char queue_data[queue_size];
 
 char fon_img[128];
 char icy_name[56] = "Unk";
 char icy_description[56] = "Unk";
 char icy_br[25];
-WSHDR *icy_title = 0, *status = 0;
+char buffer_status[56] = "";
+char bug_report[128] = "";
+WSHDR *icy_title = 0, *status = 0, *screen_ws = 0;
+
 
 typedef struct
 {
@@ -188,7 +200,7 @@ void switch_buffers()
     AudioBuffer *new = buffer->buf == buffer1.buf? &buffer2 : &buffer1;
 
     if(new->buf == new->end) {
-        PlayMelody_StopPlayback(player);
+        stopPlayBack(player);
         wsprintf(status, "stoped");
         send_update_status();
     }
@@ -208,6 +220,9 @@ void decode_into_next_buffer()
 void decode_stream(AudioBuffer *buf)
 {
     if(stop_decode) return;
+
+    sprintf(buffer_status, "Decoding ...\n");
+    REDRAW();
 
     printf(" =====> decode_stream\n");
 
@@ -245,7 +260,7 @@ void decode_stream(AudioBuffer *buf)
             seek += data_size;
         } else {
 
-            printf("decode: Data has parted placed in buffer\n");
+            //printf("decode: Data has parted placed in buffer\n");
             int cp_bytes = data_size;
             int need_write = buf->size - seek;
             l_buf = malloc(cp_bytes+1);
@@ -256,7 +271,7 @@ void decode_stream(AudioBuffer *buf)
             l_pos = l_buf + need_write;
 
             l_buf_sz = cp_bytes - need_write;
-            printf("decode: buffer left %d bytes\n", l_buf_sz);
+            //printf("decode: buffer left %d bytes\n", l_buf_sz);
             break;
         }
 
@@ -272,6 +287,12 @@ dec:
 
     buf->flushing = 0;
     flush_buffer = 0;
+
+    if(seek < 1) {
+        sprintf(buffer_status, "Decoding error or stream finshed\n");
+    }else
+        sprintf(buffer_status, "Buffered %d kb\n", data_stream_bufferized()/1024);
+    REDRAW();
 }
 
 
@@ -300,16 +321,6 @@ int decode_thread_handle(void *argv)
     return 0;
 }
 
-
-HObj ToObs(int handle)
-{
-    if(handle == -1) return 0;
-    HObj Tobj;
-    Tobj = (HObj)GetPlayObjById(handle);
-    if(!Tobj) return 0;
-    int ret = (( int*)Tobj)[0x3d0/4];
-    return ret;
-}
 
 
 void start_decoder()
@@ -340,12 +351,25 @@ void start_decoder()
     buffer = &buffer1;
 
 
-    player = audio_control_play(samplerate, channels, 16, audio_control_frame_request);
-
+    player = audio_control_play(volume, samplerate, channels, 16, audio_control_frame_request);
 #ifdef NEWSGOLD
-    int perc1 = volume*100 / max_volume_level;
+    //PlayMelody_ChangeVolume(player, 0);
+
+    /*int perc1 = volume*100 / max_volume_level;
     int vol = perc1*5/100;
-    PlayMelody_ChangeVolume(player, vol);
+    if(vol < 1 && volume > 0)
+        vol = 1;
+
+    for(int i=0; i<vol; i++)
+        PlayMelody_ChangeVolume(player, i);*/
+
+    /*int pos = -1;
+    while(pos < 1) {
+        GetPlayObjPosition((void*)ToObs(player), &pos);
+        Obs_Sound_SetVolumeEx((HObj)ToObs(player), volume, 0);
+        NU_Sleep(216/2);
+    }*/
+
 #else
     PlayMelody_ChangeVolume(player, volume);
 #endif
@@ -378,23 +402,32 @@ void terminate_audio_system()
 }
 
 
+void report_bug(const char *text)
+{
+    strncpy(bug_report, text, sizeof(bug_report));
+    REDRAW();
+}
+
+
 void onRedrawGUI(int id)
 {
     uint32_t red = 0xFF0000FF;
     lcd_draw_fillrect(mmi_layer, 0, 0, canvas.x2, canvas.y2, (char*)&red);
 
-    WSHDR *ws = AllocWS(256);
 
     if(!*icy_br)
         sprintf(icy_br, "%d", bitrate);
 
-    wsprintf(ws, "Station: %t\nDescr.: %t\nTitle: %w\nBitrate: %s\nSamplerate: %d\nChannels: %d\nVolume: %d\nStatus: %w",
+    if(*bug_report) {
+        wsprintf(screen_ws, "BUG: %s", bug_report);
+    }
+    else
+        wsprintf(screen_ws, "Station: %t\nDescr.: %t\nTitle: %w\nBitrate: %s\nSamplerate: %d\nChannels: %d\nVolume: %d\nStatus: %w\nState: %s",
              icy_name, icy_description, icy_title,
-             icy_br, samplerate, channels, volume, status);
+             icy_br, samplerate, channels, volume, status, buffer_status);
 
-    lcd_draw_text(mmi_layer, ws, 4, 10+GetFontYSIZE(FONT_SMALL)*2, scr_w-1,scr_h-1,FONT_SMALL, 0, clrWhite, 0);
+    lcd_draw_text(mmi_layer, screen_ws, 1, 2+GetFontYSIZE(FONT_SMALL)*2, scr_w-2,scr_h-1,FONT_SMALL, 0, clrWhite, 0);
 
-    FreeWS(ws);
     displayLayer(mmi_layer);
 }
 
@@ -405,6 +438,7 @@ void onCreateGUI(int id)
     SetCpuClockTempHi(2);
 
     icy_title = AllocWS(256);
+    screen_ws = AllocWS(128*3);
     status = AllocWS(56);
     sprintf(fon_img, "%sfon.png", cwd);
 
@@ -435,11 +469,14 @@ void onCloseGUI(int id)
     destroyThread(decode_thread);
 
     audio_control_destroy(player);
+    player = 0;
+
     terminate_audio_system();
 
     destroyQueue(queue_handle);
     FreeWS(icy_title);
     FreeWS(status);
+    FreeWS(screen_ws);
 }
 
 
@@ -466,37 +503,30 @@ void onKeyGUI(int id, GUI_MSG *msg)
         case '1':
             stopDecode();
             audio_control_destroy(player);
+            player = 0;
             terminate_audio_system();
             queue_struct mess = {start_decoder, {0,0,0}, 0,0,0};
             NU_Send_To_Queue(getQueueDataByID(queue_handle), &mess, queue_struct_size, NU_NO_SUSPEND);
             break;
 
         case '5':
-            PlayMelody_PausePlayback(player);
+            pausePlayBack(player);
             wsprintf(status, "paused");
             break;
 
         case '6':
-            PlayMelody_ResumePlayBack(player);
+            resumePlayBack(player);
             wsprintf(status, "playing");
             break;
 
         case VOL_UP_BUTTON:
             if(volume+1 <= max_volume_level)
-#ifdef NEWSGOLD
-                Obs_Sound_SetVolumeEx((HObj)ToObs(player), ++volume, 1);
-#else
-                PlayMelody_ChangeVolume(player, ++volume);
-#endif
+                setPlayBackVolume(player, ++volume);
             break;
 
         case VOL_DOWN_BUTTON:
             if(volume-1 > -1)
-#ifdef NEWSGOLD
-                Obs_Sound_SetVolumeEx((HObj)ToObs(player), --volume, 1);
-#else
-                PlayMelody_ChangeVolume(player, --volume);
-#endif
+                setPlayBackVolume(player, --volume);
             break;
 
         }
@@ -540,9 +570,22 @@ int main(int argc, char **argv)
         strcpy(fname, argv[1]);
     else {
         //strcpy(fname, "http://195.95.206.17/HitFM_32");
-        strcpy(fname, "http://online-hitfm.tavrmedia.ua/HitFM_32");
-        //strcpy(fname, "http://urg.adamant.net:8080/radio-stilnoe48k");
+        strcpy(fname, "http://online-hitfm.tavrmedia.ua/HitFM_32/");
+        //strcpy(fname, "http://217.29.51.162:8000/relaxfm-32k.aac");
     }
+
+    int i = sync_open("4:\\elf\\coretest\\radio_dump.txt", A_Create | A_Truncate | A_WriteOnly | A_BIN, P_WRITE, 0);
+
+    extern void *__ex;
+    Elf32_Exec *ex = (Elf32_Exec*)&__ex;
+
+    char s[56];
+    int l = sprintf(s, "Lib Range: %X - %X\n", ex->body, ex->body+ex->bin_size);
+    sync_write(i, s, l, 0);
+    sync_close(i, 0);
+
+
+    printf("RadioSi Range: %X - %X\n", ex->body, ex->body+ex->bin_size);
 
     /*char *end = strrchr(argv[0], '\\');
     memcpy(cwd, argv[0], end-argv[0]);
@@ -559,22 +602,6 @@ int main(int argc, char **argv)
     return 0;
 }
 
-
-
-void *__aeabi_memcpy(void *d, const void *s, size_t n)
-{
-    return memcpy(d, s, n);
-}
-
-void *__aeabi_memset(void *d, int c, size_t n)
-{
-    return memset(d, c, n);
-}
-
-void *__aeabi_memmove(void *d, const void *s, size_t n)
-{
-    return memmove(d, s, n);
-}
 
 
 

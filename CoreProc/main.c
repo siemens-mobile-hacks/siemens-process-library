@@ -8,7 +8,7 @@
 void _init()
 {
     void NU_ExceptionsInit();
-    NU_ExceptionsInit();
+    //NU_ExceptionsInit();
 
     void bridgeInit();
     bridgeInit();
@@ -16,11 +16,11 @@ void _init()
     void initWaitCond();
     initWaitCond();
 
-    void fdsInit();
-    fdsInit();
-
     void resCtlInit();
     resCtlInit();
+
+    void fdsInit();
+    fdsInit();
 
     void memCtlInit();
     memCtlInit();
@@ -33,6 +33,9 @@ void _init()
 
     void queueInit();
     queueInit();
+
+    void pipeInit();
+    pipeInit();
 
     void helperProcInit();
     helperProcInit();
@@ -88,6 +91,12 @@ void _fini()
     void closeIOResCtl();
     closeIOResCtl();
 
+    void pipeFini();
+    pipeFini();
+
+    void fdsFini();
+    fdsFini();
+
     void memCtlFini();
     memCtlFini();
 
@@ -101,6 +110,6 @@ void _fini()
     helperProcFini();
 
     void NU_ExceptionsDeInit();
-    NU_ExceptionsDeInit();
+    //NU_ExceptionsDeInit();
 }
 

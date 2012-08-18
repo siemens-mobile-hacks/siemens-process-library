@@ -109,7 +109,6 @@ void *get_stack_pointer_from_proc(int pid)
 }
 
 /* Общий обработчик исключений и ошибок */
-__attribute__((__noreturn__))
 void AbortCommonHandler(int id, unsigned long lr, unsigned long cpsr, int type)
 {
     // передал нахер через 1н регистр...

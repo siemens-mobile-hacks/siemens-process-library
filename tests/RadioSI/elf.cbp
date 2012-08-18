@@ -36,9 +36,9 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-O2" />
 			<Add option="-Wextra" />
 			<Add option="-std=gnu99" />
-			<Add option="-Ofast" />
 			<Add option="-DHAVE_CONFIG_H" />
 			<Add option="-D__NO_LIBC" />
 			<Add option="-D__USE_SPL__" />
@@ -64,6 +64,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="audio_control.h" />
+		<Unit filename="bufferizer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="bufferizer.h" />
 		<Unit filename="conf_loader.c">
 			<Option compilerVar="CC" />
 		</Unit>
