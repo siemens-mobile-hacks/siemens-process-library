@@ -1273,6 +1273,31 @@ libnucrt/crt_helper/main.c -text
 libnucrt/crt_helper/switab.c -text
 libnucrt/libcrt.cbp -text svneol=unset#application/xml
 libnucrt/main.c -text
+libs/lib7z.so -text svneol=unset#application/x-sharedlib
+libs/libc-1.0.so -text svneol=unset#application/x-sharedlib
+libs/libc-1.1.so -text svneol=unset#application/x-sharedlib
+libs/libcorecrt.a -text svneol=unset#application/x-archive
+libs/libcrt.a -text svneol=unset#application/x-archive
+libs/libcrt_helper-1.0.so -text svneol=unset#application/x-sharedlib
+libs/libcrt_helper.so -text svneol=unset#application/x-sharedlib
+libs/libdeft-0.1.so -text svneol=unset#application/x-sharedlib
+libs/libfaad.so -text svneol=unset#application/x-sharedlib
+libs/libft-2.4.6-1.so -text svneol=unset#application/x-sharedlib
+libs/libft_server.so -text svneol=unset#application/x-sharedlib
+libs/libgcc-4.6.1.so -text svneol=unset#application/x-sharedlib
+libs/libjpeg-62.so -text svneol=unset#application/x-sharedlib
+libs/liblz4.so -text svneol=unset#application/x-sharedlib
+libs/libm-1.0.so -text svneol=unset#application/x-sharedlib
+libs/libpng-12.so -text svneol=unset#application/x-sharedlib
+libs/libsigc-2.0.so -text svneol=unset#application/x-sharedlib
+libs/libstdc++-1.2.2.so -text svneol=unset#application/x-sharedlib
+libs/libsupc++.a -text svneol=unset#application/x-archive
+libs/libunzip-1.01.so -text svneol=unset#application/x-sharedlib
+libs/libusart.so -text svneol=unset#application/x-sharedlib
+libs/libvpatcher.so -text svneol=unset#application/x-sharedlib
+libs/libz-1.2.5.so -text svneol=unset#application/x-sharedlib
+libs/libzzip-0.36.so -text svneol=unset#application/x-sharedlib
+libs/links -text
 tests/RadioSI/audio.c -text
 tests/RadioSI/audio.h -text
 tests/RadioSI/audio_control.c -text
