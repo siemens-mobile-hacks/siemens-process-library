@@ -32,6 +32,7 @@ CoreProc/thread.c -text
 CoreProc/timer.c -text
 CoreProc/waitcondition.c -text
 dietlibc/dlibc.cbp -text svneol=unset#application/xml
+dietlibc/exe/libc-1.2.so -text svneol=unset#application/x-sharedlib
 dietlibc/main.c -text
 dietlibc/src/dietdirent.h -text
 dietlibc/src/dietfeatures.h -text
