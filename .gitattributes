@@ -1277,7 +1277,6 @@ libnucrt/libcrt.cbp -text svneol=unset#application/xml
 libnucrt/main.c -text
 libs/lib7z.so -text svneol=unset#application/x-sharedlib
 libs/libc-1.0.so -text svneol=unset#application/x-sharedlib
-libs/libc-1.1.so -text svneol=unset#application/x-sharedlib
 libs/libcorecrt.a -text svneol=unset#application/x-archive
 libs/libcrt.a -text svneol=unset#application/x-archive
 libs/libcrt_helper-1.0.so -text svneol=unset#application/x-sharedlib
