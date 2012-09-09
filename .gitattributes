@@ -1,4 +1,36 @@
 * text=auto !eol
+Applications/RadioSi-C++/GSProperty -text
+Applications/RadioSi-C++/HttpHeader.cpp -text
+Applications/RadioSi-C++/HttpHeader.h -text
+Applications/RadioSi-C++/Mutex.h -text
+Applications/RadioSi-C++/Thread.h -text
+Applications/RadioSi-C++/Url.cpp -text
+Applications/RadioSi-C++/Url.h -text
+Applications/RadioSi-C++/WaitCondition.h -text
+Applications/RadioSi-C++/aaccontext.cpp -text
+Applications/RadioSi-C++/aaccontext.h -text
+Applications/RadioSi-C++/elf.cbp -text svneol=unset#application/xml
+Applications/RadioSi-C++/elf.depend -text
+Applications/RadioSi-C++/elf.layout -text svneol=unset#application/xml
+Applications/RadioSi-C++/exe/RadioSi_nsg.elf -text svneol=unset#application/x-executable
+Applications/RadioSi-C++/ibstream.cpp -text
+Applications/RadioSi-C++/ibstream.h -text
+Applications/RadioSi-C++/main.cpp -text
+Applications/RadioSi-C++/main.h -text
+Applications/RadioSi-C++/multivariatebuffer.cpp -text
+Applications/RadioSi-C++/multivariatebuffer.h -text
+Applications/RadioSi-C++/outstream.cpp -text
+Applications/RadioSi-C++/outstream.h -text
+Applications/RadioSi-C++/pcmplayer.cpp -text
+Applications/RadioSi-C++/pcmplayer.h -text
+Applications/RadioSi-C++/queue.cpp -text
+Applications/RadioSi-C++/queue.h -text
+Applications/RadioSi-C++/sourcestream.cpp -text
+Applications/RadioSi-C++/sourcestream.h -text
+Applications/RadioSi-C++/thread.cpp -text
+Applications/RadioSi-C++/thread.h -text
+Applications/RadioSi-C++/widechar.cpp -text
+Applications/RadioSi-C++/widechar.h -text
 CoreProc/_start.c -text
 CoreProc/async_print.c -text
 CoreProc/corearray.c -text
