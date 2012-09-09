@@ -1282,12 +1282,14 @@ libnucrt/libcrt.cbp -text svneol=unset#application/xml
 libnucrt/main.c -text
 libs/lib7z.so -text svneol=unset#application/x-sharedlib
 libs/libc-1.0.so -text svneol=unset#application/x-sharedlib
+libs/libc-1.2.so -text svneol=unset#application/x-sharedlib
 libs/libcorecrt.a -text svneol=unset#application/x-archive
 libs/libcrt.a -text svneol=unset#application/x-archive
 libs/libcrt_helper-1.0.so -text svneol=unset#application/x-sharedlib
 libs/libcrt_helper.so -text svneol=unset#application/x-sharedlib
 libs/libdeft-0.1.so -text svneol=unset#application/x-sharedlib
 libs/libfaad.so -text svneol=unset#application/x-sharedlib
+libs/libfaad2.so -text svneol=unset#application/x-sharedlib
 libs/libft-2.4.6-1.so -text svneol=unset#application/x-sharedlib
 libs/libft_server.so -text svneol=unset#application/x-sharedlib
 libs/libgcc-4.6.1.so -text svneol=unset#application/x-sharedlib
@@ -1296,7 +1298,9 @@ libs/liblz4.so -text svneol=unset#application/x-sharedlib
 libs/libm-1.0.so -text svneol=unset#application/x-sharedlib
 libs/libpng-12.so -text svneol=unset#application/x-sharedlib
 libs/libsigc-2.0.so -text svneol=unset#application/x-sharedlib
+libs/libspl.so -text svneol=unset#application/x-sharedlib
 libs/libstdc++-1.2.2.so -text svneol=unset#application/x-sharedlib
+libs/libstdc++-2.2.2.so -text svneol=unset#application/x-sharedlib
 libs/libsupc++.a -text svneol=unset#application/x-archive
 libs/libunzip-1.01.so -text svneol=unset#application/x-sharedlib
 libs/libusart.so -text svneol=unset#application/x-sharedlib
@@ -1304,6 +1308,68 @@ libs/libvpatcher.so -text svneol=unset#application/x-sharedlib
 libs/libz-1.2.5.so -text svneol=unset#application/x-sharedlib
 libs/libzzip-0.36.so -text svneol=unset#application/x-sharedlib
 libs/links -text
+libstdc++/eh_arm.cc -text
+libstdc++/main.cpp -text
+libstdc++/src/Makefile -text
+libstdc++/src/abi/abi.cpp -text
+libstdc++/src/abi/cxa/cp-damagle.c -text
+libstdc++/src/abi/cxa/cxa_atexit.c -text
+libstdc++/src/abi/cxa/exit.h -text
+libstdc++/src/abi/libgcc_eh/Makefile -text
+libstdc++/src/abi/libsupc/Makefile -text
+libstdc++/src/algorithm.cpp -text
+libstdc++/src/associative_base.cpp -text
+libstdc++/src/bitset.cpp -text
+libstdc++/src/char_traits.cpp -text
+libstdc++/src/complex.cpp -text
+libstdc++/src/del_op.cc -text
+libstdc++/src/del_op.cpp -text
+libstdc++/src/del_opnt.cc -text
+libstdc++/src/del_opnt.cpp -text
+libstdc++/src/del_opv.cc -text
+libstdc++/src/del_opv.cpp -text
+libstdc++/src/del_opvnt.cc -text
+libstdc++/src/del_opvnt.cpp -text
+libstdc++/src/deque.cpp -text
+libstdc++/src/eh_alloc.cpp -text
+libstdc++/src/eh_globals.cpp -text
+libstdc++/src/exception.cpp -text
+libstdc++/src/fstream.cpp -text
+libstdc++/src/func_exception.cpp -text
+libstdc++/src/iomanip.cpp -text
+libstdc++/src/ios.cpp -text
+libstdc++/src/iostream.cpp -text
+libstdc++/src/istream.cpp -text
+libstdc++/src/iterator.cpp -text
+libstdc++/src/limits.cpp -text
+libstdc++/src/list.cpp -text
+libstdc++/src/locale.cpp -text
+libstdc++/src/map.cpp -text
+libstdc++/src/new_handler.cc -text
+libstdc++/src/new_handler.cpp -text
+libstdc++/src/new_op.cc -text
+libstdc++/src/new_op.cpp -text
+libstdc++/src/new_opnt.cc -text
+libstdc++/src/new_opnt.cpp -text
+libstdc++/src/new_opv.cc -text
+libstdc++/src/new_opv.cpp -text
+libstdc++/src/new_opvnt.cc -text
+libstdc++/src/new_opvnt.cpp -text
+libstdc++/src/numeric.cpp -text
+libstdc++/src/ostream.cpp -text
+libstdc++/src/queue.cpp -text
+libstdc++/src/set.cpp -text
+libstdc++/src/sstream.cpp -text
+libstdc++/src/stack.cpp -text
+libstdc++/src/stdexcept.cpp -text
+libstdc++/src/streambuf.cpp -text
+libstdc++/src/string.cpp -text
+libstdc++/src/support.cpp -text
+libstdc++/src/typeinfo.cpp -text
+libstdc++/src/utility.cpp -text
+libstdc++/src/valarray.cpp -text
+libstdc++/src/vector.cpp -text
+libstdc++/uclibc++.cbp -text svneol=unset#application/xml
 tests/RadioSI/audio.c -text
 tests/RadioSI/audio.h -text
 tests/RadioSI/audio_control.c -text
