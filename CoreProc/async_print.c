@@ -5,6 +5,7 @@
 #include <spl/mutex.h>
 #include <spl/queue.h>
 #include <spl/memctl.h>
+#include <spl/signals.h>
 
 
 char _debug_data[4*1024];

@@ -111,9 +111,11 @@ typedef struct
     short id;
     int fd;
     int message_handler;
+    int flags;
     SocketState state;
 
     int connectedWid, readWid;
+    NU_SEMAPHORE read_sema, write_sema;
 } CoreSocket;
 
 
@@ -287,25 +289,71 @@ static void gethostbyname_impl(dnrImpl *dnr)
 
 
 
-static ssize_t __read(int fd, void *data, size_t size)
+static ssize_t __read(int fd, void *_data, size_t size)
 {
     idStream *s = getStreamData(getpid(), fd);
-    if(!s) {
+    if(!s)
         return -1;
+
+    if(size < 1 || !_data)
+        return 0;
+
+    CoreSocket *_sock = getSocketData(s->fd);
+    char *data = (char *)_data;
+    size_t total = 0;
+
+    if(_sock->flags & SOCK_IO_STRONG_SZ_COMP) {
+        while(total < (int64_t)size) {
+            int64_t r = _sread(s->fd, data + total, size - total, 0);
+            if(r < 0) {
+                if(total)
+                    break;
+                else
+                    return -1;
+            }
+
+            total += r;
+        }
+    } else {
+        total = _sread(s->fd, _data, size, 0);
     }
 
-    return _sread(s->fd, data, size, 0);
+    return total;
 }
 
 
-static ssize_t __write(int fd, const void *data, size_t size)
+static ssize_t __write(int fd, const void *_data, size_t size)
 {
     idStream *s = getStreamData(getpid(), fd);
     if(!s) {
         return -1;
     }
 
-    return _swrite(s->fd, data, size, 0);
+    if(size < 1 || !_data)
+        return 0;
+
+    CoreSocket *_sock = getSocketData(s->fd);
+    const char *data = (char *)_data;
+    size_t total = 0;
+
+    if(_sock->flags & SOCK_IO_STRONG_SZ_COMP) {
+        while(total < (int64_t)size) {
+            int64_t w = _swrite(s->fd, data + total, size - total, 0);
+            if(w < 0) {
+                if(total)
+                    break;
+                else
+                    return -1;
+            }
+
+            total += w;
+        }
+    } else {
+        total = _swrite(s->fd, _data, size, 0);
+    }
+
+    return total;
+    //return _swrite(s->fd, data, size, 0);
 }
 
 
@@ -347,6 +395,37 @@ static off_t __lseek(int fd, off_t offset, int whence)
 }
 
 
+static int __ioctl(int fd, int command, va_list va)
+{
+    idStream *s = getStreamData(getpid(), fd);
+    if(!s)
+        return -1;
+
+    CoreSocket *_sock = getSocketData(s->fd);
+
+    switch(command)
+    {
+        case SOCK_SET_FLAGS:
+        {
+            int f = va_arg(va, int);
+            _sock->flags = f;
+            break;
+        }
+
+        case SOCK_GET_FLAGS:
+        {
+            int *f = va_arg(va, int *);
+            *f = _sock->flags;
+            break;
+        }
+
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
 
 int socket(int af, int type, int protocol)
 {
@@ -384,17 +463,25 @@ int socket(int af, int type, int protocol)
         int iofd = open_fd();
         idStream *s = getStreamData(getpid(), iofd);
         if(!s) {
-            _sclose(impl.ret);
-            leaveProcessCriticalCode(pid);
-            return -1;
+            goto error;
         }
 
         CoreSocket *sock = newSocket();
+        if( NU_Create_Semaphore(&sock->read_sema, "rd", 0, NU_FIFO) != NU_SUCCESS ) {
+            goto error;
+        }
+
+        if( NU_Create_Semaphore(&sock->write_sema, "wr", 0, NU_FIFO) != NU_SUCCESS ) {
+            NU_Delete_Semaphore(&sock->read_sema);
+            goto error;
+        }
+
         sock->fd = impl.ret;
         sock->message_handler = registerSocketMessageHandler(sock->id, socketMessageHandler);
         sock->state = SS_SOCKET_CREATED;
         sock->connectedWid = createWaitCond("conn_wait");
         sock->readWid = createWaitCond("read_wait");
+        sock->flags = SOCK_IO_STRONG_SZ_COMP;
 
         s->fd = sock->id;
         s->mode = O_RDWR;
@@ -404,8 +491,15 @@ int socket(int af, int type, int protocol)
         s->close = __close;
         s->flush = __flush;
         s->lseek = __lseek;
+        s->ioctl = __ioctl;
         leaveProcessCriticalCode(pid);
         return iofd;
+
+        error:
+
+        _sclose(impl.ret);
+        leaveProcessCriticalCode(pid);
+        return -1;
     }
 
     return impl.ret;
@@ -508,6 +602,9 @@ int _sclose(int fd)
 
     destroyWaitCond(sock->connectedWid);
     destroyWaitCond(sock->readWid);
+
+    NU_Delete_Semaphore(&sock->read_sema);
+    NU_Delete_Semaphore(&sock->write_sema);
     removeSocketMessageHandler(sock->id);
     freeSocket(sock->id);
 
@@ -533,7 +630,7 @@ int _swrite(int fd, const void *data, size_t size, int flag)
 
     typedef struct
     {
-        NU_SEMAPHORE wait;
+        NU_SEMAPHORE *wait;
         int sock;
         const void *data;
         size_t size;
@@ -541,7 +638,7 @@ int _swrite(int fd, const void *data, size_t size, int flag)
         int ret;
     }WriteData;
 
-    WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
+    WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0, .wait = &sock->write_sema};
     int pid = getpid();
     if(isProcessKilling(pid) == 1)
         return -1;
@@ -549,7 +646,7 @@ int _swrite(int fd, const void *data, size_t size, int flag)
     void __write(WriteData *d)
     {
         d->ret = send(d->sock, d->data, d->size, d->flag);
-        NU_Release_Semaphore(&d->wait);
+        NU_Release_Semaphore(d->wait);
     }
 
     // лочим убийство процесса на этом этапе,
@@ -558,11 +655,9 @@ int _swrite(int fd, const void *data, size_t size, int flag)
     enterProcessCriticalCode(pid);
 
     //printf("socket write entered critical code.\n");
-    NU_Create_Semaphore(&d.wait, "write", 0, NU_PRIORITY);
     SUBPROC(__write, &d);
 
-    NU_Obtain_Semaphore(&d.wait, NU_SUSPEND);
-    NU_Delete_Semaphore(&d.wait);
+    NU_Obtain_Semaphore(d.wait, NU_SUSPEND);
 
     leaveProcessCriticalCode(pid);
     //printf("socket write complete\n");
@@ -599,7 +694,7 @@ int _sread(int fd, void *data, size_t size, int flag)
 
     typedef struct
     {
-        NU_SEMAPHORE wait;
+        NU_SEMAPHORE *wait;
         int sock;
         void *data;
         size_t size;
@@ -607,29 +702,32 @@ int _sread(int fd, void *data, size_t size, int flag)
         int ret;
     }WriteData;
 
-    WriteData d = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0};
+    WriteData dat = {.sock = sock->fd, .data = data, .size = size, .flag = flag, .ret = 0, .wait = &sock->read_sema};
 
 
     //printf("socket read ...\n");
     void __read(WriteData *d) {
         d->ret = recv(d->sock, d->data, d->size, d->flag);
-
-        //printf("socket subread complete\n");
-        NU_Release_Semaphore(&d->wait);
+        NU_Release_Semaphore(d->wait);
     }
 
     enterProcessCriticalCode(pid);
     //printf("socket read entered critical code.\n");
 
-    NU_Create_Semaphore(&d.wait, "read", 0, NU_PRIORITY);
-    SUBPROC(__read, &d);
+    SUBPROC(__read, &dat);
+    NU_Obtain_Semaphore(dat.wait, NU_SUSPEND);
 
-    NU_Obtain_Semaphore(&d.wait, NU_SUSPEND);
-    NU_Delete_Semaphore(&d.wait);
+    if(dat.ret < 1) {
+        char d[55];
+        sprintf(d, "sock ret: %d\n", dat.ret);
+        ShowMSG(1, (int)d);
+    }
+    //if(dat.ret > 0)
+    //resetWaitConditions(sock->readWid);
 
     leaveProcessCriticalCode(pid);
     //printf("socket read complete\n");
-    return d.ret;
+    return dat.ret;
 }
 
 

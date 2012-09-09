@@ -2,6 +2,7 @@
 #include <swilib.h>
 #include <spl/coreevent.h>
 #include <spl/process.h>
+#include <spl/processbridge.h>
 #include <spl/csm.h>
 #include <spl/gui.h>
 #include <spl/mutex.h>
@@ -358,7 +359,7 @@ int closeGUI(int id)
 
     if(data->cg_id > -1)
         //GBS_SendMessage(MMI_CEPID, KEY_DOWN, id, 0xFFFFDEAD);
-        GeneralFunc_flag0(data->cg_id, 0);
+        sync_GeneralFunc_flag1(data->cg_id, 3);
 
     eraseProcessDtor(data->pid, data->dt_id);
     return 0;

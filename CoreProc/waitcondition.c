@@ -167,6 +167,8 @@ int resetWaitConditions(int wid)
     if(!wc || !wc->used)
         return -1;
 
+    if(wc->waiters > 0)
+        wakeAllWaitConds(wid);
     wc->waiters = 0;
     return 0;
 }

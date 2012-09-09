@@ -25,6 +25,7 @@ CoreProc/process.c -text
 CoreProc/processbridge.c -text
 CoreProc/queue.c -text
 CoreProc/resctl.c -text
+CoreProc/signals.c -text
 CoreProc/socket.c -text
 CoreProc/system.s -text
 CoreProc/task.c -text

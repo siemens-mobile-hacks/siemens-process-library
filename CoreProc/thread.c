@@ -208,6 +208,8 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
 
     if(conf->stack && conf->stack_size < 1) {
         printf("Invalid stack size\n");
+        freeCoreThreadData(thread->t.id);
+        leaveProcessCriticalCode(pid);
         return -3;
     }
 
@@ -215,6 +217,12 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     int stack_size = conf->stack_size? conf->stack_size : DEFAULT_STACK_SIZE;
     void *stack = conf->stack? conf->stack : malloc(stack_size);
     conf->is_stack_freeable = conf->stack? conf->is_stack_freeable : 1;
+
+    if(!stack) {
+        freeCoreThreadData(thread->t.id);
+        leaveProcessCriticalCode(pid);
+        return -4;
+    }
 
     NU_TASK *task = malloc(sizeof(*task));
     memset(task, 0, sizeof *task);
@@ -232,10 +240,11 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     thread->name = malloc(15);
     sprintf(thread->name, "thread_%d", id);
 
-    if( NU_Create_Task(thread->t.task, thread->name,
+    int e;
+    if((e = NU_Create_Task(thread->t.task, thread->name,
                        thread_handle, id, thread,
                        stack, stack_size, prio, 0,
-                       NU_PREEMPT, NU_NO_START) != NU_SUCCESS )
+                       NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
 
     {
         free(task);
@@ -244,6 +253,9 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
 
         freeCoreThreadData(thread->t.id);
         leaveProcessCriticalCode(pid);
+        char s[128];
+        sprintf(s, "Error creating thread %d", e);
+        ShowMSG(1, (int)s);
         return -2;
     }
 

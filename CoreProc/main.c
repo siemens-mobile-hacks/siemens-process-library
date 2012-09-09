@@ -91,6 +91,9 @@ void _fini()
     void closeIOResCtl();
     closeIOResCtl();
 
+    void queueFini();
+    queueFini();
+
     void pipeFini();
     pipeFini();
 

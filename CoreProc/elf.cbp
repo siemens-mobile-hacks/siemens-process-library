@@ -37,10 +37,10 @@
 		</Build>
 		<Compiler>
 			<Add option="-O2" />
-			<Add option="-W" />
 			<Add option="-Wall" />
 			<Add option="-std=gnu99" />
 			<Add option="-D__NO_LIBC" />
+			<Add option="-D__SPL_BUILD__" />
 		</Compiler>
 		<Linker>
 			<Add option="-s" />
@@ -117,6 +117,10 @@
 		<Unit filename="resctl.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="signals.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="signals.h" />
 		<Unit filename="socket.c">
 			<Option compilerVar="CC" />
 		</Unit>

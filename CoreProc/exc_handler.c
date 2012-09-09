@@ -26,7 +26,7 @@ char und_stack[UND_STACK_SIZE];
 
 EXC_QUEUE exc_queue[EXC_QUEUE_MAX_SIZE];
 unsigned int exc_queue_count = 0;
-void kill_hisr_chek(int _pid, int tid, int code, int hisr);
+void kill_hisr_chek(int _pid, int tid, int code, int hisr, int signum);
 
 /* Постановка в очередь нового исключений */
 int AddToExcQueue(int pid, int tid, unsigned int lr, unsigned int cpsr, int type, char *string)
@@ -137,7 +137,8 @@ void AbortCommonHandler(int id, unsigned long lr, unsigned long cpsr, int type)
     NU_Change_Preemption(NU_PREEMPT);
 
     //Останавливаем текущий таск и всех его потомковых тредов
-    fullProcessSuspend(pid);
+    suspendProcessThreads(pid);
+    suspendProcess(pid);
 }
 
 
@@ -164,7 +165,7 @@ void exception_handler()
     int rem_id = GetExcQueueElement(eq);
     short pid = eq->pid;
     short tid = eq->tid;
-    const char *task_name = pidName(pid);
+    const char *task_name = nameByPid(pid);
 
     if(!task_name)
         task_name = "UNK";
@@ -214,7 +215,7 @@ void exception_handler()
     free(eq);
     printf_nlock("\033[1m\033[31mException: %s\033[0m\n", msg);
 
-    kill_hisr_chek(pid, tid, -1, 1);
+    kill_hisr_chek(pid, tid, -1, 1, SIGKILL);
 
     RemoveFromExcQueueElement(rem_id);
 }

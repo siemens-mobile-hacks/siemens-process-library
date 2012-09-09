@@ -10,7 +10,7 @@
 #include "helperproc.h"
 
 
-#define MAX_PROCESS_ID 256
+
 typedef struct
 {
     void (*h)(void *, void *);
@@ -18,6 +18,7 @@ typedef struct
 }TorsList;
 
 char *_strdup(const char *str);
+void kill_hisr_chek(int _pid, int tid, int code, int hisr, int signum);
 static CoreProcess core_process[MAX_PROCESS_ID];
 static CoreMutex pb_mutex;
 
@@ -120,6 +121,16 @@ int freeCoreProcessData(int _pid)
     proc->t.task = 0;
     proc->t.id = -1;
     return 0;
+}
+
+
+int isProcessExist(int pid)
+{
+    CoreProcess *proc = coreProcessData(pid);
+    if(!proc || !proc->t.events)
+        return 0;
+
+    return 1;
 }
 
 
@@ -244,6 +255,7 @@ static void kill_impl(int _pid, int tid, int code, int lock)
     /*if(!proc->hisr_call)
         proc->hisr_call = NU_Current_Task_Pointer() == ? 1 : 0;*/
 
+
     if(!proc->hisr_call) {
         if(proc->terminated == 2)
             return;
@@ -251,6 +263,29 @@ static void kill_impl(int _pid, int tid, int code, int lock)
          printf("Hisr killing...\n");
 
 
+    void (*sigh)(int) = 0;
+    int signum = -1;
+    if(proc->siglist.signum > -1) {
+        struct CoreListInode *inode = 0;
+
+        corelist_foreach(inode, proc->siglist.list.first)
+        {
+            struct siglist_data *d = inode->self;
+            if(d) {
+                if(d->signum == proc->siglist.signum) {
+                    sigh = d->sighandler;
+                    corelist_del_inode(&proc->siglist.list, inode);
+                    break;
+                }
+            }
+        }
+
+        signum = proc->siglist.signum;
+        proc->siglist.signum = -1;
+    }
+
+    if(sigh && signum > -1)
+        sigh(signum);
 
     proc->terminated = 2;
     proc->retcode = code;
@@ -299,8 +334,8 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         {
             int __pid = (int)inode->self;
             printf("Destroying process %d...\n", __pid);
-            kill(__pid, 0);
-	    waitForProcessFinished(__pid, 0);
+            kill_hisr_chek(__pid, 0, 0, 0, -1);
+            waitForProcessFinished(__pid, 0);
             printf("process %d destroyed\n", __pid);
 
             if(inode != proc->process.list.first)
@@ -385,12 +420,25 @@ static void kill_impl(int _pid, int tid, int code, int lock)
         proc->kill_state ++;
     }
 
-    printf("State: 9 : %d\n", proc->kill_state);
+    printf("State: 9\n");
     if(proc->kill_state == 9) {
         if(proc->ppid_inode) {
             delProcessFromParent(proc->ppid, proc->ppid_inode);
-            proc->kill_state ++;
+
         }
+        proc->kill_state ++;
+    }
+
+    printf("State: 10 : %d\n", proc->kill_state);
+    if(proc->kill_state == 10) {
+
+        struct CoreListInode *inode = 0;
+
+        corelist_clean_foreach_begin(inode, proc->siglist.list.first)
+        corelist_clean_foreach_end(&proc->siglist.list)
+
+        corelist_release(&proc->siglist.list);
+        proc->kill_state ++;
     }
 
     int ex_wc = proc->exit_wait_cond;
@@ -475,12 +523,14 @@ void quit()
 }
 
 
-void kill_hisr_chek(int _pid, int tid, int code, int hisr)
+void kill_hisr_chek(int _pid, int tid, int code, int hisr, int signum)
 {
     printf("%s(%d, %d)\n", __FUNCTION__, _pid, tid);
-    if(_pid < 0 && _pid >= MAX_PROCESS_ID)
+    CoreProcess *proc = coreProcessData(_pid);
+    if(proc->t.id < 0)
         return;
 
+    proc->siglist.signum = signum;
 
     if(_pid == getpid()) { // self kill
         if(tid > -1 && tid == gettid())
@@ -522,9 +572,9 @@ void kill_hisr_chek(int _pid, int tid, int code, int hisr)
 }
 
 
-void kill(int _pid, int code)
+void kill_(int _pid, int code)
 {
-    kill_hisr_chek(_pid, gettid(), code, 0);
+    kill_hisr_chek(_pid, gettid(), code, 0, 0);
 }
 
 
@@ -613,6 +663,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     proc->kill_state = 0;
     proc->kill_tryes = 0;
     proc->sig_from_tid = -1;
+    proc->siglist.signum = -1;
 
 
     if( (err = NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
@@ -640,6 +691,8 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
 
     corearray_init(&proc->ctors, NULL);
     corearray_init(&proc->dtors, NULL);
+    corelist_init(&proc->siglist.list);
+
     createMutex(&proc->m_ctor);
     createMutex(&proc->m_dtor);
     createMutex(&proc->process.mutex);
@@ -669,7 +722,7 @@ int resetProcess(int pid, int argc, char **argv)
 
     NU_Suspend_Task(proc->t.task);
     NU_Terminate_Task(proc->t.task);
-    NU_Reset_Task(proc->t.task, 0, 0);
+    NU_Reset_Task(proc->t.task, pid, proc);
 
     return 0;
 }
@@ -685,7 +738,7 @@ int suspendProcess(int pid)
 }
 
 
-int fullProcessSuspend(int pid)
+int suspendProcessThreads(int pid)
 {
     CoreProcess *proc = coreProcessData(pid);
     if(!proc || proc->t.id < 0)
@@ -697,7 +750,7 @@ int fullProcessSuspend(int pid)
         suspendThread(tid);
     }
 
-    return NU_Suspend_Task(proc->t.task);
+    return 0;
 }
 
 
@@ -711,7 +764,7 @@ int resumeProcess(int pid)
 }
 
 
-int fullProcessResume(int pid)
+int resumeProcessThreads(int pid)
 {
     CoreProcess *proc = coreProcessData(pid);
     if(!proc || proc->t.id < 0)
@@ -723,7 +776,7 @@ int fullProcessResume(int pid)
         resumeThread(tid);
     }
 
-    return NU_Resume_Task(proc->t.task);
+    return 0;
 }
 
 
@@ -874,7 +927,7 @@ int delProcessFromParent(int ppid, struct CoreListInode *inode)
 }
 
 
-const char *pidName(int _pid)
+const char *nameByPid(int _pid)
 {
     CoreProcess *proc = coreProcessData(_pid);
     if(!proc || proc->t.id < 0)

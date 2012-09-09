@@ -337,7 +337,7 @@ int sync_lseek(int FileHandler, unsigned int offset, unsigned int origin, unsign
 int sync_mkdir(const char * cDirectory, unsigned int *ErrorNumber)
 {
     int __mkdir(const char * cDirectory, unsigned int *ErrorNumber) {
-        return _mkdir(cDirectory, ErrorNumber);
+        return mkdir(cDirectory, ErrorNumber);
     }
     SafeProcessRun(__mkdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
 }
@@ -346,7 +346,7 @@ int sync_mkdir(const char * cDirectory, unsigned int *ErrorNumber)
 int sync_rmdir(const char * cDirectory, unsigned int *ErrorNumber)
 {
     int __rmdir(const char * cDirectory, unsigned int *ErrorNumber) {
-        return _rmdir(cDirectory, ErrorNumber);
+        return rmdir(cDirectory, ErrorNumber);
     }
     SafeProcessRun(__rmdir, int, NU_SYNCHRONIZED_PROC, 2, cDirectory, ErrorNumber);
 }
@@ -505,4 +505,17 @@ int sync_Obs_Stop(HObj hObj)
 {
     SafeProcessRun(Obs_Stop, int, NU_SYNCHRONIZED_PROC, 1, hObj);
 }
+
+
+void sync_RefreshGUI()
+{
+    SafeProcessRun(RefreshGUI, void, NU_SYNCHRONIZED_PROC, 0);
+}
+
+
+void sync_GeneralFunc_flag1(int id, int flag)
+{
+    SafeProcessRun(GeneralFunc_flag1, void, NU_SYNCHRONIZED_PROC, 2, id, flag);
+}
+
 

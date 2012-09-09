@@ -4,6 +4,8 @@
 #include <spl/corelist.h>
 #include <spl/process.h>
 #include <spl/queue.h>
+#include <spl/static_data_base.h>
+
 
 
 typedef struct  {
@@ -14,34 +16,7 @@ typedef struct  {
 }idQueue;
 
 #define MAX_QUEUE_ID 256
-static idQueue queue_db[MAX_QUEUE_ID];
-
-
-void queueInit()
-{
-    for(int i=0; i<MAX_QUEUE_ID; ++i)
-        queue_db[i].id = -1;
-}
-
-
-idQueue *coreQueueData(short id) {
-    if(id >= MAX_QUEUE_ID || id < 0)
-        return 0;
-
-    return &queue_db[id];
-}
-
-
-static short emptyQueue()
-{
-    for(int i =0; i<MAX_QUEUE_ID; ++i)
-    {
-        if(queue_db[i].id < 0)
-            return i;
-    }
-
-    return -1;
-}
+declare_static_db(idQueue, queue, MAX_QUEUE_ID)
 
 
 
@@ -49,12 +24,13 @@ int createQueue(const char *name, void *start_address, unsigned long queue_size,
                                   unsigned char message_type, unsigned long message_size,
                                   unsigned char suspend_type)
 {
-    int id = emptyQueue();
-    idQueue *q = coreQueueData(id);
+    int id;
+    idQueue *q = newidQueueData();
     if(!q) {
         return -1;
     }
-    q->id = id;
+
+    id = q->id;
     q->pid = getpid();
     memset(&q->queue, 0, sizeof(q->queue));
 
@@ -71,31 +47,45 @@ int createQueue(const char *name, void *start_address, unsigned long queue_size,
 
 int destroyQueue(int id)
 {
-    idQueue *q = coreQueueData(id);
-    if(!q || q->id != id)
+    idQueue *q = checkidQueueData(id);
+    if(!q)
         return -1;
 
     NU_Delete_Queue(&q->queue);
     eraseProcessDtor(q->pid, q->dt_id);
-    q->id = -1;
+    freeidQueueData(id);
     return 0;
 }
 
 
 NU_QUEUE *getQueueDataByID(int id)
 {
-    idQueue *q = coreQueueData(id);
-    if(!q || q->id != id)
+    idQueue *q = checkidQueueData(id);
+    if(!q)
         return 0;
 
     return &q->queue;
 }
 
 
+int sendToQueue(int queue, void *message, unsigned long size, int suspend)
+{
+    idQueue *q = checkidQueueData(queue);
+    if(!q)
+        return -1;
+
+    return NU_Send_To_Queue(&q->queue, message, size, suspend);
+}
 
 
+int receiveFromQueue(int queue, void *message, unsigned long size, unsigned long *actual_size, int suspend)
+{
+    idQueue *q = checkidQueueData(queue);
+    if(!q)
+        return -1;
 
-
+    return NU_Receive_From_Queue(&q->queue, message, size, actual_size, suspend);
+}
 
 
 

@@ -98,6 +98,7 @@ setup:
                 is->close = (int (*)(int))stub;
                 is->flush = (int (*)(int))stub;
                 is->lseek = (off_t (*)(int, off_t, int))stub;
+                is->ioctl = (int (*)(int, int, va_list))stub;
                 is->pid = getpid();
                 corearray_store_cell(array, it, is);
                 unlockMutex(&data->mutex);
@@ -176,7 +177,6 @@ ssize_t read(int fd, void *buf, size_t len)
 ssize_t write(int fd, const void *buf, size_t len)
 {
     idStream *s = getStreamData(getpid(), fd);
-
     if(!s)
         return -1;
 
@@ -188,7 +188,6 @@ ssize_t write(int fd, const void *buf, size_t len)
 int close(int fd)
 {
     idStream *s = getStreamData(getpid(), fd);
-
     if(!s)
         return -1;
 
@@ -199,7 +198,6 @@ int close(int fd)
 int flush(int fd)
 {
     idStream *s = getStreamData(getpid(), fd);
-
     if(!s)
         return -1;
 
@@ -210,7 +208,6 @@ int flush(int fd)
 off_t lseek(int fd, off_t offset, int whence)
 {
     idStream *s = getStreamData(getpid(), fd);
-
     if(!s)
         return -1;
 
@@ -218,5 +215,18 @@ off_t lseek(int fd, off_t offset, int whence)
 }
 
 
+int ioctl(int fd, int command, ...)
+{
+    idStream *s = getStreamData(getpid(), fd);
+    if(!s)
+        return -1;
+
+    va_list va;
+    va_start(va, command);
+    int r = s->ioctl(fd, command, va);
+    va_end(va);
+
+    return r;
+}
 
 
