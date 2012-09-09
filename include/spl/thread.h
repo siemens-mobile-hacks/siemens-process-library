@@ -4,6 +4,10 @@
 
 #include "task.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, int run);
 int createThread(int prio, int (*handle)(void *), void *data, int run);
 
@@ -19,5 +23,10 @@ int getptid();
 
 int waitForThreadStarted(int _tid);
 int waitForThreadFinished(int _tid, int *retcode);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

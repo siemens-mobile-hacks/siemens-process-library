@@ -10,6 +10,11 @@ enum {
 };
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /** NOTE
   *  createPipe returning stream fd, not pipe fd.
   *  For use pipe functions, use getStreamHandle(fd) for
@@ -35,5 +40,10 @@ int waitForPipeReadyWrite(int pipe);
 int waitForPipeReadyRead(int pipe);
 int pipeStreamFlags(int pipe);
 int setPipeStreamFlags(int pipe, int flags);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

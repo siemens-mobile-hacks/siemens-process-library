@@ -31,10 +31,15 @@ typedef struct
 }TaskConf;
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 void initTaskConf(TaskConf *conf);
 void setTaskConfigStackSize(TaskConf *conf, unsigned int sz);
 
-static inline
+__inl
 short getShort(const char *data)
 {
 #ifndef __ASM_OPT
@@ -124,6 +129,10 @@ typedef struct
     VOID               *tc_argv;               /* Optional task argument */
 } MYTASK;
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

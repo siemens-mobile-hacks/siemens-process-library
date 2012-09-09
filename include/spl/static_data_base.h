@@ -7,7 +7,7 @@
 
 #define declare_static_db(db_struct_name, func_prefix, max_members_var)   \
     static db_struct_name _db[max_members_var];     \
-    static CoreMutex db_struct_name##_lock;           \
+    static CoreMutex db_struct_name##_lock;         \
                                                     \
     void func_prefix##Init()                        \
     {                                               \

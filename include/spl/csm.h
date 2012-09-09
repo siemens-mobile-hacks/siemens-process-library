@@ -7,6 +7,10 @@
 #define CoreCSM_GUI 1
 #define CoreCSM_IDLE 2
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 int createCSM(const char *name, int type,
               void (*onCreate)(int id, CSM_RAM *),
@@ -16,5 +20,10 @@ int createCSM(const char *name, int type,
 int closeCSM(int id);
 int bindGUIToCSM(int id, int gui_id);
 int setNameCSM(int id, const char *name);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

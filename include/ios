@@ -21,7 +21,6 @@
 #include <cstddef>
 #include <locale>
 #include <iosfwd>
-#include <swilib.h>
 
 #ifndef __HEADER_STD_IOS
 #define __HEADER_STD_IOS 1
@@ -39,7 +38,7 @@ namespace std{
 #ifdef __UCLIBCXX_EXCEPTION_SUPPORT__
 		class failure : public exception {
 		public:
-			explicit failure(const std::string& msg) { }
+			explicit failure(const std::string&) { }
 			explicit failure() { }
 			virtual const char* what() const throw() {
 				return "std::ios_base failure exception";
@@ -157,6 +156,7 @@ namespace std{
 			,mInit()
 #endif
 		{
+
 		}
 		locale mLocale;
 		fmtflags mformat;
@@ -473,7 +473,7 @@ namespace std{
 			return st == rhs.st;
 		}
 		_UCXXEXPORT bool operator!=(const fpos &rhs){
-			return st == rhs.st;
+			return st != rhs.st;
 		}
 		_UCXXEXPORT fpos & operator+(const streamoff & o){
 			st += o;
@@ -486,7 +486,6 @@ namespace std{
 		_UCXXEXPORT streamoff operator-(const fpos & rhs){
 			return st - rhs.st;
 		}
-
 
 	private:
 		stateT st;

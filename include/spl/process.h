@@ -3,10 +3,19 @@
 #define __PROCESS_H__
 
 #include "task.h"
+#include "mutex.h"
 #include "corearray.h"
 #include "corelist.h"
 #include "resctl.h"
-#include "mutex.h"
+
+
+#define MAX_PROCESS_ID 256
+
+
+struct siglist_data{
+    int signum;
+    void (*sighandler)(int);
+};
 
 
 typedef struct
@@ -57,8 +66,21 @@ typedef struct
     char **argv;
     int retcode;
 
+    struct {
+        CoreList list;
+        int signum; // current signum
+    }siglist;
+
+
 }CoreProcess;
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+int isProcessExist(int pid);
 int isProcessKilling(int pid);
 int enterProcessCriticalCode(int pid);
 int leaveProcessCriticalCode(int pid);
@@ -74,9 +96,9 @@ int resetProcess(int pid, int argc, char **argv);
 int getpid(void);
 int getppid(void);
 int getParentPid(int pid);
-const char *pidName();
+const char *nameByPid(int pid);
 
-void kill(int pid, int code);
+//void kill(int pid, int code);
 void exit(int code);
 void quit();
 
@@ -86,8 +108,8 @@ int delProcessThread(int pid, struct CoreListInode *inode);
 struct CoreListInode *addProcessToParent(int ppid, int pid);
 int delProcessFromParent(int ppid, struct CoreListInode *inode);
 
-int fullProcessSuspend(int pid);
-int fullProcessResume(int pid);
+int suspendProcessThreads(int pid);
+int resumeProcessThreads(int pid);
 int suspendProcess(int pid);
 int resumeProcess(int pid);
 
@@ -106,4 +128,10 @@ int waitForProcessFinished(int _pid, int *retcode);
 int attachProcessIdUserData(int _pid, void *userData);
 
 ResCtlData *dataOfResCtl(int _pid, int id);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -1499,18 +1499,23 @@ typedef struct
 }GBSPROC;
 
 
-#ifdef __USE_SPL__
-#include <spl/process.h>
-#include <spl/memctl.h>
-#endif
-
-/* хедеры эльфпака */
-#include <ep3/loader.h>
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#ifdef __USE_SPL__
+#include <spl/processbridge.h>
+//#include <spl/process.h>
+#include <spl/memctl.h>
+int getpid();
+#endif
+
+
+/* хедеры эльфпака */
+#include <ep3/loader.h>
+
 
 #include "directswicall.h"
 void kill_elf();

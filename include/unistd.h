@@ -58,7 +58,9 @@ loff_t lseek64(int fildes, loff_t offset, int whence) __THROW;
 
 int chdir(const char *path) __THROW;
 int fchdir(int fd) __THROW;
+#ifndef __NO_LIBC
 int rmdir(const char *pathname) __THROW;
+#endif
 char *getcwd(char *buf, size_t size) __THROW;
 int symlink(const char *, const char *);
 int lchown(const char *, uid_t, gid_t);

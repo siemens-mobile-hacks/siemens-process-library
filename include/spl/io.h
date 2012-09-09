@@ -20,6 +20,7 @@ typedef struct
     int type;
     int fd;
     int mode;
+    int (*ioctl)(int fd, int command, va_list va);
     ssize_t (*read)(int fd, void *data, size_t size);
     ssize_t (*write)(int fd, const void *data, size_t size);
     off_t (*lseek)(int fd, off_t offset, int whence);
@@ -29,6 +30,9 @@ typedef struct
     short pid;
 } idStream;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 int open_fd();
@@ -48,6 +52,10 @@ ssize_t write(int fd, const void *buf, size_t len);
 off_t lseek(int fd, off_t offset, int whence);
 int flush(int fd);
 int close(int fd);
+int ioctl(int fd, int command, ...);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

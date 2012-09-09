@@ -31,12 +31,6 @@ __inl
 void SwitchPhoneOff()
 __defn( 0x9)
 
-
-#ifdef __USE_SPL__
-#define _mkdir sync_mkdir
-#define GetFileAttrib sync_GetFileAttrib
-#define SetFileAttrib sync_SetFileAttrib
-#else
 __inl
 int _open(const char * cFileName, unsigned int iFileFlags, unsigned int iFileMode, unsigned int *ErrorNumber)
 __def( 10, int, cFileName, iFileFlags, iFileMode, ErrorNumber)
@@ -61,8 +55,21 @@ __inl
 long _lseek(int FileHandler, unsigned int offset, unsigned int origin, unsigned int *ErrorNumber, unsigned int *ErrorNumber2)
 __def( 15, long, FileHandler, offset, origin, ErrorNumber, ErrorNumber2)
 
+
+#ifdef __USE_SPL__
+#define _mkdir sync_mkdir
+#define GetFileAttrib sync_GetFileAttrib
+#define SetFileAttrib sync_SetFileAttrib
+#else
+
 __inl
-int _mkdir(const char * cFileName, unsigned int *ErrorNumber)
+int
+#ifdef __NO_LIBC
+mkdir
+#else
+_mkdir
+#endif
+      (const char * cFileName, unsigned int *ErrorNumber)
 __def( 16, int, cFileName, ErrorNumber)
 
 __inl
@@ -419,7 +426,13 @@ int fmove(const char * SourceFileName, const char * DestFileName, unsigned int *
 __def( 142, int, SourceFileName, DestFileName, ErrorNumber)
 
 __inl
-int _rmdir(const char * cDirectory, unsigned int *ErrorNumber)
+int
+#ifdef __NO_LIBC
+rmdir
+#else
+_rmdir
+#endif
+      (const char * cDirectory, unsigned int *ErrorNumber)
 __def( 143, int, cDirectory, ErrorNumber)
 
 __inl
@@ -430,10 +443,6 @@ __inl
 int isdir(const char * cDirectory, unsigned int *ErrorNumber)
 __def( 145, int, cDirectory, ErrorNumber)
 #endif
-
-__inl
-void *_calloc(size_t nelem, size_t elsize)
-__def( 146, void *, nelem, elsize)
 
 
 #ifdef __NO_LIBC
@@ -1162,12 +1171,6 @@ __inl
 void REDRAW(void)
 __defn( 0x0172)
 
-//#ifdef SIE_SOCK
-//#define SIE_SOCK_PREFIX
-//#else
-#define SIE_SOCK_PREFIX _
-//#endif
-
 __inl
 int __socket(int af,int type,int protocol)
 __def( 0x0173, int, af, type, protocol)
@@ -1176,16 +1179,34 @@ __inl
 int __connect(int sock, SOCK_ADDR * param2, int name_length)
 __def( 0x0174, int, sock, param2, name_length)
 
+#ifndef __USE_SPL__
+
+#ifdef __NO_LIBC
+
+#ifndef __SPL_BUILD__
 __inl
-int _bind(int sock,SOCK_ADDR * param2,int name_length)
+int socket(int af,int type,int protocol)
+__def( 0x0173, int, af, type, protocol)
+
+__inl
+int connect(int sock, SOCK_ADDR * param2, int name_length)
+__def( 0x0174, int, sock, param2, name_length)
+#endif
+
+__inl
+int bind(int sock,SOCK_ADDR * param2,int name_length)
 __def( 0x0175, int, sock, param2, name_length)
+#endif
+
+#endif
+
 
 __inl
 int closesocket(int socket)
 __def( 0x0176, int, socket)
 
 __inl
-int __shutdown(int socket,int how)
+int shutdown(int socket,int how)
 __def( 0x0177, int, socket, how)
 
 __inl
@@ -1308,9 +1329,13 @@ __inl
 void SetMenuItemIcon(void *gui,int item_n,int icon_n)
 __defn( 0x0195, gui, item_n, icon_n)
 
+#ifdef __USE_SPL__
+#define RefreshGUI sync_RefreshGUI
+#else
 __inl
 void RefreshGUI(void)
 __defn( 0x0196)
+#endif
 
 __inl
 void *AllocMenuItem(void *gui)

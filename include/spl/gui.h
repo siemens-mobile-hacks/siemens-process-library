@@ -4,7 +4,9 @@
 
 #include <swilib.h>
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int createGUI(RECT *canvas,
               void (*onRedraw)(int id),
@@ -18,5 +20,9 @@ int createGUI(RECT *canvas,
 int closeGUI(int id);
 int getGUIid(int id);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

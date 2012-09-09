@@ -20,6 +20,11 @@ typedef struct
     void *(*realloc)(void *, size_t);
 }CoreArray;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define corearray_foreach(type, value, _array, iterator)           \
     if((size_t)iterator < (_array)->size)                           \
         for( value = (type)((_array)->array[iterator]);               \
@@ -39,13 +44,18 @@ int corearray_lock(CoreArray *array);
 int corearray_unlock(CoreArray *array);
 
 
-static inline void *
-corearray_cell(CoreArray *array, unsigned int cell)
+__inl
+void *corearray_cell(CoreArray *array, unsigned int cell)
 {
     if(cell >= array->size) return 0;
 
     return array->array[cell];
 }
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __EXT_ARRAY_H__ */

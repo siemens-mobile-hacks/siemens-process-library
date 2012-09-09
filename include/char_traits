@@ -16,11 +16,11 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <swilib.h>
 #include <basic_definitions>
 #include <string.h>
 #include <exception>
 #include <memory>
+
 
 #ifdef __UCLIBCXX_HAS_WCHAR__
 #include <cwchar>
@@ -106,8 +106,8 @@ namespace std{
 			}
 		}
 		static state_type get_state(pos_type p){
-			p = p;
-			state_type a;
+			((void)p);
+			state_type a = 0;
 			return a;
 		}
 	};

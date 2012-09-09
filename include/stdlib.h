@@ -53,11 +53,11 @@ unsigned long int strtoul(const char *nptr, char **endptr, int base) __THROW;
 extern int __ltostr(char *s, unsigned int size, unsigned long i, unsigned int base, int UpCase) __THROW;
 extern int __dtostr(double d,char *buf,unsigned int maxlen,unsigned int prec,unsigned int prec2,int g) __THROW;
 
-#if !defined(__STRICT_ANSI__) || __STDC_VERSION__ + 0 >= 199900L
+
 __extension__ long long int strtoll(const char *nptr, char **endptr, int base) __THROW;
 __extension__ unsigned long long int strtoull(const char *nptr, char **endptr, int base) __THROW;
 __extension__ int __lltostr(char *s, unsigned int size, unsigned long long i, unsigned int base, int UpCase) __THROW;
-#endif
+
 
 int atoi(const char *nptr) __THROW;
 long int atol(const char *nptr) __THROW;

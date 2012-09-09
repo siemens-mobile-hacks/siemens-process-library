@@ -31,7 +31,10 @@ __BEGIN_DECLS
 #define SIGPIPE		13
 #define SIGALRM		14
 #define SIGTERM		15
+#define SIGCONT		18
+#define SIGSTOP		19
 #define SIGUNUSED	31
+
 #if defined(__i386__) || defined(__x86_64__) || defined(__powerpc__) || defined(__arm__) \
 	|| defined(__s390__) || defined(__ia64__) || defined(__powerpc64__)
 #define SIGBUS		 7
@@ -529,8 +532,8 @@ int sigandset(sigset_t *set, const sigset_t *left, const sigset_t *right) __THRO
 
 sighandler_t signal(int signum, sighandler_t action);
 
-//int raise (int sig) __THROW;
-//int kill(pid_t pid, int sig) __THROW;
+int raise (int sig) __THROW;
+int kill(pid_t pid, int sig) __THROW;
 
 int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact) __THROW;
 

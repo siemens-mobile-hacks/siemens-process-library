@@ -384,6 +384,7 @@ struct group_filter
    may have different representations but the values are always the same.  */
 
 
+#if 0
 #ifndef __NO_LIBC
 extern uint32_t ntohl (uint32_t __netlong) __THROW __attribute__ ((__const__));
 
@@ -395,6 +396,7 @@ extern uint32_t htonl (uint32_t __hostlong)
 
 extern uint16_t htons (uint16_t __hostshort)
      __THROW __attribute__ ((__const__));
+#endif
 #endif
 
 #include <endian.h>

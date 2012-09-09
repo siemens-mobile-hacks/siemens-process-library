@@ -3,7 +3,9 @@
 #define __MEMCTL_H__
 
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 
@@ -15,5 +17,10 @@ int memoryFree(int _pid, void *ptr);
 int free_ws(int pid, WSHDR *ws);
 WSHDR *alloc_ws(int pid, size_t size);
 
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

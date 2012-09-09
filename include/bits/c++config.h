@@ -69,6 +69,22 @@
 # endif
 #endif
 
+
+// Macro for noexcept, to support in mixed 03/0x mode.
+# ifdef __cplusplus
+#ifndef _GLIBCXX_NOEXCEPT
+# ifdef __GXX_EXPERIMENTAL_CXX0X__
+#  define _GLIBCXX_NOEXCEPT noexcept
+#  define _GLIBCXX_USE_NOEXCEPT noexcept
+#  define _GLIBCXX_THROW(_EXC)
+# else
+#  define _GLIBCXX_NOEXCEPT
+#  define _GLIBCXX_USE_NOEXCEPT throw()
+#  define _GLIBCXX_THROW(_EXC) throw(_EXC)
+# endif
+#endif
+#endif
+
 // Macros for visibility attributes.
 //   _GLIBCXX_HAVE_ATTRIBUTE_VISIBILITY
 //   _GLIBCXX_VISIBILITY
@@ -209,7 +225,7 @@ namespace __gnu_cxx
 # define _GLIBCXX_END_NAMESPACE_VERSION }
 #else
 # define _GLIBCXX_BEGIN_NAMESPACE_VERSION
-# define _GLIBCXX_END_NAMESPACE_VERSION 
+# define _GLIBCXX_END_NAMESPACE_VERSION
 #endif
 
 

@@ -78,7 +78,7 @@ struct strftime_locale {
     const char *  date_fmt;
 };
 
-extern size_t      strftime_tz(char *s, size_t max, const char *format, const struct tm *tm, const struct strftime_locale*  lc);
+//extern size_t      strftime_tz(char *s, size_t max, const char *format, const struct tm *tm, const struct strftime_locale*  lc);
 /* ANDROID-END */
 
 extern char *ctime(const time_t *timep);

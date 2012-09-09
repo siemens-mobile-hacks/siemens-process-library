@@ -23,7 +23,7 @@ extern const int __sys_switab_addres[];
 
 
 #ifndef __NO_DIRECT_SWI
-#define __inl static inline
+#define __inl static inline __attribute__((unused))
 
 #ifdef __cplusplus
 

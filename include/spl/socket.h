@@ -29,15 +29,41 @@ typedef enum
 }SocketState;
 
 
+/* ioctl socket control */
+enum {
+    SOCK_IO_STRONG_SZ_COMP = (1 << 1)
+}SocketFlags;
+
+
+/* ioctl interface */
+enum {
+    SOCK_SET_FLAGS = (1 << 1),
+    SOCK_GET_FLAGS = (1 << 2),
+}SocketIOCtl;
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 int streamBySocket(int sid);
 
 int gethostbyname(const char *name);
 
+#ifdef __USE_SPL__
 int socket(int af, int type, int protocol);
 int connect(int s, struct sockaddr *name, int namelen);
+#endif
 
 int _swrite(int fd, const void *data, size_t size, int flag);
 int _sread(int fd, void *data, size_t size, int flag);
 int _sclose(int sock);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -6,6 +6,8 @@
 #include <nu_swilib.h>
 
 
+//#define PTHREAD_MUTEX_INITIALIZER MUTEX_INITIALIZER
+
 typedef struct
 {
     NU_SEMAPHORE sema;
@@ -15,6 +17,9 @@ typedef struct
     int used;
 } CoreMutex;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 int createMutex(CoreMutex *mutex);
@@ -23,5 +28,9 @@ int lockMutex(CoreMutex *mutex);
 int tryLockMutex(CoreMutex *mutex);
 int unlockMutex(CoreMutex *mutex);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

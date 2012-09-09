@@ -23,6 +23,9 @@ typedef struct
     size_t size;
 }CoreList;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define corelist_foreach(inode, first_inode)                     \
             for(inode = first_inode; inode; inode = inode->next)
@@ -61,5 +64,9 @@ int corelist_pop(CoreList *list, void *value);
 void corelist_lock(CoreList *list);
 void corelist_unlock(CoreList *list);
 CoreList *corelist_fork(CoreList *list);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

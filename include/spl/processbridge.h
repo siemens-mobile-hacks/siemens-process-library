@@ -22,11 +22,16 @@ typedef struct
     void *ret;
 }ThreadInfo;
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* arguments manipulation code */
 
 #define collect_args(args) \
             free(args)
-
 
 
 void * pack_args(int argc, ...);
@@ -77,6 +82,12 @@ int sync_Obs_CreateObject(int uid_in, int uid_out, int prio, int msg_callback, i
 int sync_Obs_DestroyObject(HObj hObj);
 int sync_Obs_SetInput_File(HObj hObj, int unk_zero, WSHDR *path);
 int sync_Obs_Stop(HObj hObj);
+void sync_RefreshGUI();
+void sync_GeneralFunc_flag1(int id, int flag);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

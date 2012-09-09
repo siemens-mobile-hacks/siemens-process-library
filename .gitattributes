@@ -293,6 +293,7 @@ include/bits/allocator.h -text
 include/bits/atomic_0.h -text
 include/bits/atomic_2.h -text
 include/bits/atomic_base.h -text
+include/bits/atomic_lockfree_defines.h -text
 include/bits/atomic_word.h -text
 include/bits/basic_file.h -text
 include/bits/basic_ios.h -text
@@ -766,6 +767,8 @@ include/ext/vstring.tcc -text
 include/ext/vstring_fwd.h -text
 include/ext/vstring_util.h -text
 include/faad.h -text
+include/faad2/faad.h -text
+include/faad2/neaacdec.h -text
 include/fcntl.h -text
 include/features.h -text
 include/fenv.h -text
@@ -1141,6 +1144,7 @@ include/spl/process.h -text
 include/spl/processbridge.h -text
 include/spl/queue.h -text
 include/spl/resctl.h -text
+include/spl/signals.h -text
 include/spl/socket.h -text
 include/spl/static_data_base.h -text
 include/spl/task.h -text

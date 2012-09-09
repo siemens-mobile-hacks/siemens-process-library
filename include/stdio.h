@@ -35,7 +35,9 @@ FILE *fdopen (int fildes, const char *mode) __THROW;
 FILE *freopen (const char *path, const char *mode, FILE *stream) __THROW;
 
 #ifndef __NO_LIBC
-int printf(const char *format, ...) __THROW __attribute__((__format__(__printf__,1,2)));
+#ifndef printf
+int printf(const char *fmt, ...);
+#endif
 #endif
 int fprintf(FILE *stream, const char *format, ...) __THROW __attribute__((__format__(__printf__,2,3)));
 

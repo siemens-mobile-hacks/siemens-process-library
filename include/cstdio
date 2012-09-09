@@ -36,7 +36,7 @@ namespace std{
 	using ::fgets;
 	using ::fopen;
 	using ::fprintf;
-	using ::fputc;
+	//using ::fputc;
 	using ::fputs;
 	using ::fread;
 	using ::freopen;
@@ -49,9 +49,9 @@ namespace std{
 	using ::getchar;
 	using ::gets;
 	using ::perror;
-	using ::printf;
-	using ::putc;
-	using ::putchar;
+	//using ::printf;
+	//using ::putc;
+	//using ::putchar;
 	using ::puts;
 	using ::remove;
 	using ::rename;

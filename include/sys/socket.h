@@ -3,6 +3,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <swilib.h>
 
 __BEGIN_DECLS
 
@@ -350,7 +351,7 @@ struct ucred {
 #define __CMSG_NXTHDR(ctl, len, cmsg) __cmsg_nxthdr((ctl),(len),(cmsg))
 #define CMSG_NXTHDR(mhdr, cmsg) cmsg_nxthdr((mhdr), (cmsg))
 
-static inline struct cmsghdr* __cmsg_nxthdr(void *__ctl, size_t __size, struct cmsghdr *__cmsg)
+__inl struct cmsghdr* __cmsg_nxthdr(void *__ctl, size_t __size, struct cmsghdr *__cmsg)
 {
   struct cmsghdr * __ptr;
   __ptr = (struct cmsghdr*)(((unsigned char *) __cmsg) +  CMSG_ALIGN(__cmsg->cmsg_len));
@@ -359,7 +360,8 @@ static inline struct cmsghdr* __cmsg_nxthdr(void *__ctl, size_t __size, struct c
   return __ptr;
 }
 
-static inline struct cmsghdr* cmsg_nxthdr (struct msghdr *__msg, struct cmsghdr *__cmsg)
+
+__inl struct cmsghdr* cmsg_nxthdr (struct msghdr *__msg, struct cmsghdr *__cmsg)
 {
   return __cmsg_nxthdr(__msg->msg_control, __msg->msg_controllen, __cmsg);
 }

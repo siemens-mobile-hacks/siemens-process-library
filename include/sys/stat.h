@@ -628,7 +628,9 @@ extern int lstat64(const char *__file, struct stat64 *__buf) __THROW;
 extern int chmod (const char *__file, mode_t __mode) __THROW;
 extern int fchmod (int __fd, mode_t __mode) __THROW;
 extern mode_t umask (mode_t __mask) __THROW;
+#ifndef __NO_LIBC
 extern int mkdir (const char *__path, mode_t __mode) __THROW;
+#endif
 extern int mknod (const char *__path, mode_t __mode, dev_t __dev) __THROW;
 extern int mkfifo (const char *__path, mode_t __mode) __THROW;
 

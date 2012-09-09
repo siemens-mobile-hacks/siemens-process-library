@@ -24,12 +24,12 @@
 color32_t alphaBlend(color32_t c1, color32_t c2, uint8_t alpha);
 
 /* pixel manipulation */
-static inline uint16_t rgb32ToRgb16(const uint32_t rgb32) {
+__inl uint16_t rgb32ToRgb16(const uint32_t rgb32) {
     return (rgb32 >> 8 & 0xF800) | (rgb32 >> 5 & 0x07E0) | (rgb32 >> 3 & 0x001F);
 }
 
 
-static inline uint32_t rgb16ToRgb32(uint16_t c) {
+__inl uint32_t rgb16ToRgb32(uint16_t c) {
     return 0xff000000
         | ((((c) << 3) & 0xf8) | (((c) >> 2) & 0x7))
         | ((((c) << 5) & 0xfc00) | (((c) >> 1) & 0x300))
@@ -37,14 +37,14 @@ static inline uint32_t rgb16ToRgb32(uint16_t c) {
 }
 
 
-static inline void rgb16To32(uint8_t dst[4], uint16_t col, uint8_t alpha) {
+__inl void rgb16To32(uint8_t dst[4], uint16_t col, uint8_t alpha) {
     dst[0] = (col&0x1F)<<3;
     dst[1] = (col&0x7E0)>>3;
     dst[2] = (col&0xF800)>>8;
     dst[3] = alpha;
 }
 
-static inline uint32_t rgb24ToRgb32(uint32_t col, uint8_t alpha) {
+__inl uint32_t rgb24ToRgb32(uint32_t col, uint8_t alpha) {
 
     uint32_t c32_o = 0;
     uint8_t *c24 = (uint8_t*)&col;
@@ -57,7 +57,7 @@ static inline uint32_t rgb24ToRgb32(uint32_t col, uint8_t alpha) {
 }
 
 
-static inline uint32_t rgb32ToRgb24(uint32_t col) {
+__inl uint32_t rgb32ToRgb24(uint32_t col) {
 
     uint32_t c24_o = 0;
     uint8_t *c32 = (uint8_t*)&col;
@@ -70,17 +70,17 @@ static inline uint32_t rgb32ToRgb24(uint32_t col) {
 }
 
 
-static inline uint32_t rgbTo32(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+__inl uint32_t rgbTo32(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
 
-static inline uint16_t rgbTo16(uint8_t r, uint8_t g, uint8_t b) {
+__inl uint16_t rgbTo16(uint8_t r, uint8_t g, uint8_t b) {
     return ((( r >> 3 ) << 11 ) | (( g >> 2 ) << 5) | (b >> 3) );
 }
 
 
-static inline void rgb32toRgb(uint32_t c, uint8_t dst[4]) {
+__inl void rgb32toRgb(uint32_t c, uint8_t dst[4]) {
     uint8_t a = (c >> 24) & 0xff;
     uint8_t r = (c >> 16) & 0xff;
     uint8_t g = (c >> 8) & 0xff;

@@ -15,6 +15,9 @@ typedef struct {
     char         string[0x20];
 }EXC_QUEUE;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define EXC_QUEUE_MAX_SIZE      100
 
@@ -83,6 +86,10 @@ extern void DisableInterrupts();
 
 #define SWI2_DEF_HANDLER_NSG      0x00000310
 #define SWI3_DEF_HANDLER_NSG      0x00000324
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

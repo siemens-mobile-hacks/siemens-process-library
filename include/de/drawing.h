@@ -29,7 +29,7 @@ enum
 };
 
 
-static inline image_t *imghdr2image(IMGHDR *img)
+__inl image_t *imghdr2image(IMGHDR *img)
 {
     if(!img)
         return 0;
@@ -42,7 +42,7 @@ static inline image_t *imghdr2image(IMGHDR *img)
 }
 
 
-static inline image_t *imghdr2image_p(IMGHDR *img)
+__inl image_t *imghdr2image_p(IMGHDR *img)
 {
     image_t *r = (image_t*)malloc(sizeof(image_t));
     r->w = img->w;
@@ -53,7 +53,7 @@ static inline image_t *imghdr2image_p(IMGHDR *img)
 }
 
 
-static inline void imghdr2image_c(IMGHDR *imgh, image_t *img)
+__inl void imghdr2image_c(IMGHDR *imgh, image_t *img)
 {
     img->w = imgh->w;
     img->h = imgh->h;
