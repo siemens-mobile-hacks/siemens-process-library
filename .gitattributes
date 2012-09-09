@@ -1309,6 +1309,7 @@ libs/libz-1.2.5.so -text svneol=unset#application/x-sharedlib
 libs/libzzip-0.36.so -text svneol=unset#application/x-sharedlib
 libs/links -text
 libstdc++/eh_arm.cc -text
+libstdc++/exe/.directory -text
 libstdc++/main.cpp -text
 libstdc++/src/Makefile -text
 libstdc++/src/abi/abi.cpp -text
@@ -1370,6 +1371,8 @@ libstdc++/src/utility.cpp -text
 libstdc++/src/valarray.cpp -text
 libstdc++/src/vector.cpp -text
 libstdc++/uclibc++.cbp -text svneol=unset#application/xml
+libstdc++/uclibc++.depend -text
+libstdc++/uclibc++.layout -text svneol=unset#application/xml
 tests/RadioSI/audio.c -text
 tests/RadioSI/audio.h -text
 tests/RadioSI/audio_control.c -text
