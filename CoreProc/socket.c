@@ -718,9 +718,9 @@ int _sread(int fd, void *data, size_t size, int flag)
     NU_Obtain_Semaphore(dat.wait, NU_SUSPEND);
 
     if(dat.ret < 1) {
-        char d[55];
-        sprintf(d, "sock ret: %d\n", dat.ret);
-        ShowMSG(1, (int)d);
+        //char d[55];
+        //sprintf(d, "sock ret: %d\n", dat.ret);
+        //ShowMSG(1, (int)d);
     }
     //if(dat.ret > 0)
     //resetWaitConditions(sock->readWid);

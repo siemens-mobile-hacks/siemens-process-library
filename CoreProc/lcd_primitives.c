@@ -8,7 +8,7 @@ void lcd_draw_image(LCDLAYER *layer, int x, int y, image_t *_img)
     if(!_img) return;
     if(!_img->bitmap) return;
 
-    IMGHDR img = {_img->w, _img->h, _img->bpnum==16? 8:10, _img->bitmap};
+    IMGHDR img = {.w = _img->w, .h = _img->h, .bpnum = _img->bpnum==16? 8:10, .bitmap = _img->bitmap};
 
     RECT rc;
     DRWOBJ drwobj;

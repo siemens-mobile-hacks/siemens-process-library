@@ -19,7 +19,7 @@ int createGUI(RECT *canvas,
 
 int closeGUI(int id);
 int getGUIid(int id);
-
+void *getUserDataGUI(int id);
 
 #ifdef __cplusplus
 }

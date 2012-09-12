@@ -101,6 +101,7 @@ void drawpixel24(image_t *buffer, uint16_t x, uint16_t y, const uint8_t color[3]
 
 /* нарисовать 16битную точку */
 void drawpixel16(image_t *buffer, uint16_t x, uint16_t y, color16_t color);
+void drawpixel16i(image_t *buffer, uint32_t i, color16_t color);
 
 /* нарисовать 32битную точку */
 void drawpixel32(image_t *buffer, uint16_t x, uint16_t y, color32_t color);

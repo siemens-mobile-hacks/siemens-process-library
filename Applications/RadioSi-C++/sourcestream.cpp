@@ -343,8 +343,13 @@ ssize_t SourceStream::read(void *fd, void *_data, size_t size)
 
         int r = _this->read(data, size);
 
-        if(r > 0)
+        if(r > 0) {
             readed += r;
+        } else {
+            ShowMSG(1, (int)"Socket problem");
+            if(!readed)
+                return -1;
+        }
 
         _this->block += r;
     }

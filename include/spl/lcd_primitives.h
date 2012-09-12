@@ -40,9 +40,9 @@ void displayLayer(LCDLAYER *layer)
 }
 
 
-void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, IMGHDR *img);
-void lcd_draw_image(LCDLAYER *layer, int x, int y, image_t *_img);
-void lcd_draw_eimg(LCDLAYER *layer, int x, int y, EIMGHDR *eimg);
+void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, const IMGHDR *img);
+void lcd_draw_image(LCDLAYER *layer, int x, int y, const image_t *_img);
+void lcd_draw_eimg(LCDLAYER *layer, int x, int y, const EIMGHDR *eimg);
 void lcd_draw_text(LCDLAYER *layer, WSHDR *text, int x1, int y1, int x2, int y2,
               int font, int text_attribute,
               const char *Pen, const char *Brush);

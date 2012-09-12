@@ -18,6 +18,39 @@ LCDLAYER *mmi_layer;
 MainPlayer *player = nullptr;
 
 
+typedef struct
+{
+    CoreEvent head;
+    void (*f)(/*void *, void *, void **/);
+    void *d[3];
+}BosEvent __attribute__((aligned(4)));
+
+
+void BosThread(void (*f)())
+{
+    BosEvent e;
+
+    e.head.id = 0;
+    e.head.dispatcher = [=](void *e) {
+        BosEvent *ev = (BosEvent*)e;
+
+        ev->f(/*ev->d[0], ev->d[1], ev->d[2]*/);
+    };
+
+    /*va_list va;
+    va_start(va, f);
+
+    e.d[0] = va_arg(va, void *);
+    e.d[1] = va_arg(va, void *);
+    e.d[2] = va_arg(va, void *);*/
+
+    e.f = (void (*)(/*void*, void*, void**/))f;
+
+    sendEvent(getpid(), &e, sizeof e);
+}
+
+
+
 MainPlayer::MainPlayer() :
     SourceStream("http://195.95.206.17/HitFM_32"),
     aac_context(nullptr),
@@ -83,6 +116,11 @@ void MainPlayer::connectStatus(int code)
 
         play();
         //setVolume(5);
+
+        BosThread( [=]() {
+                player->destroyConnection();
+        } );
+
     }
 }
 

@@ -36,8 +36,10 @@ typedef int HObj;
 typedef int jmp_buf[11];
 #endif
 
+#ifndef __cplusplus
 #define true 1
 #define false 0
+#endif
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)x)

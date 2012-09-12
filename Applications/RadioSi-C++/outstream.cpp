@@ -46,7 +46,7 @@ void to16BitAudio(void *sample_buffer, char *data, unsigned int samples, int cha
 
 
 OutStream::OutStream(AACContext *context, MultivariateBuffer *_mbuffer) :
-    Thread(400*1024, 100),
+    Thread(350*1024, 100),
     readed_size(0),
     switch_status(0),
     can_switch(1),
@@ -172,7 +172,7 @@ ololo:
 
 
 
-    sprintf(info, "Done %d %d %d", err, mbuffer->availableFlushData(), mbuffer->size());
+    sprintf(info, "Done %d %d %d %s", err, mbuffer->availableFlushData(), mbuffer->size(), err? NeAACDecGetErrorMessage(err) : "" );
     REDRAW();
 
     mbuffer->nextFlushBuffer();

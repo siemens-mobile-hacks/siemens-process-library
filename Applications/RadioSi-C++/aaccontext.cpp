@@ -93,8 +93,12 @@ static ssize_t my_read(void *h, void *data, size_t size)
 
     while(total < (int64_t)size) {
         int64_t r = is->read(((char*)data)+total, size-total);
-        if(r < 0)
-            break;
+        if(r < 0) {
+            if(total)
+                break;
+            else
+                return -1;
+        }
 
         total += r;
     }

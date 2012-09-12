@@ -78,6 +78,12 @@ protected:
         return ::read(socket_fd, data, size);
     }
 
+    inline void destroyConnection() {
+        if(connection)
+            delete connection;
+
+        connection = nullptr;
+    }
 
 public:
     std::string path;

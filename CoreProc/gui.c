@@ -376,3 +376,14 @@ int getGUIid(int id)
 }
 
 
+void *getUserDataGUI(int id)
+{
+    CoreGUI *data = getCoreGUIData(id);
+    if(!data)
+        return 0;
+
+    return data->userdata;
+}
+
+
+

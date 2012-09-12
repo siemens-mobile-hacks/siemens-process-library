@@ -46,9 +46,9 @@ void PcmPlayer::frame_request(int unk, uint16_t *frame)
 
 PcmPlayer::PcmPlayer(uint32_t lenght, uint32_t samplerate, uint32_t channels, uint32_t bits_per_sample) :
     obsHandle(0),
-    _volume(5),
-    playerId(-1)
+    _volume(5)
 {
+    playerId = -1;
     setAudioParameters(lenght, samplerate, channels, bits_per_sample);
     global_pcm_player = this;
 }

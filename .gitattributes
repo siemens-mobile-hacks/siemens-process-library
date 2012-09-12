@@ -1308,8 +1308,10 @@ libnucrt/__cxa_atexit.cpp -text
 libnucrt/crt_helper/__cxa_atexit.cpp -text
 libnucrt/crt_helper/crt_helper.cbp -text svneol=unset#application/xml
 libnucrt/crt_helper/dump.S -text
+libnucrt/crt_helper/exe/libcrt_helper.so -text svneol=unset#application/x-sharedlib
 libnucrt/crt_helper/main.c -text
 libnucrt/crt_helper/switab.c -text
+libnucrt/exe/libcorecrt.a -text svneol=unset#application/x-archive
 libnucrt/libcrt.cbp -text svneol=unset#application/xml
 libnucrt/main.c -text
 libs/lib7z.so -text svneol=unset#application/x-sharedlib
@@ -1342,6 +1344,7 @@ libs/libzzip-0.36.so -text svneol=unset#application/x-sharedlib
 libs/links -text
 libstdc++/eh_arm.cc -text
 libstdc++/exe/.directory -text
+libstdc++/exe/libstdc++-2.2.2.so -text svneol=unset#application/x-sharedlib
 libstdc++/main.cpp -text
 libstdc++/src/Makefile -text
 libstdc++/src/abi/abi.cpp -text
