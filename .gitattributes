@@ -65,7 +65,6 @@ CoreProc/thread.c -text
 CoreProc/timer.c -text
 CoreProc/waitcondition.c -text
 dietlibc/dlibc.cbp -text svneol=unset#application/xml
-dietlibc/exe/libc-1.2.so -text svneol=unset#application/x-sharedlib
 dietlibc/main.c -text
 dietlibc/src/dietdirent.h -text
 dietlibc/src/dietfeatures.h -text
@@ -1316,7 +1315,6 @@ libnucrt/libcrt.cbp -text svneol=unset#application/xml
 libnucrt/main.c -text
 libs/lib7z.so -text svneol=unset#application/x-sharedlib
 libs/libc-1.0.so -text svneol=unset#application/x-sharedlib
-libs/libc-1.2.so -text svneol=unset#application/x-sharedlib
 libs/libcorecrt.a -text svneol=unset#application/x-archive
 libs/libcrt.a -text svneol=unset#application/x-archive
 libs/libcrt_helper-1.0.so -text svneol=unset#application/x-sharedlib
@@ -1333,8 +1331,6 @@ libs/libm-1.0.so -text svneol=unset#application/x-sharedlib
 libs/libpng-12.so -text svneol=unset#application/x-sharedlib
 libs/libsigc-2.0.so -text svneol=unset#application/x-sharedlib
 libs/libspl.so -text svneol=unset#application/x-sharedlib
-libs/libstdc++-1.2.2.so -text svneol=unset#application/x-sharedlib
-libs/libstdc++-2.2.2.so -text svneol=unset#application/x-sharedlib
 libs/libsupc++.a -text svneol=unset#application/x-archive
 libs/libunzip-1.01.so -text svneol=unset#application/x-sharedlib
 libs/libusart.so -text svneol=unset#application/x-sharedlib
@@ -1344,7 +1340,6 @@ libs/libzzip-0.36.so -text svneol=unset#application/x-sharedlib
 libs/links -text
 libstdc++/eh_arm.cc -text
 libstdc++/exe/.directory -text
-libstdc++/exe/libstdc++-2.2.2.so -text svneol=unset#application/x-sharedlib
 libstdc++/main.cpp -text
 libstdc++/src/Makefile -text
 libstdc++/src/abi/abi.cpp -text

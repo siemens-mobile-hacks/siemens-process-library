@@ -1,35 +1,41 @@
-/*
- * File:   main.cpp
- * Author: vova7890
- *
- * Created on 2 Август 2011 г., 11:34
- */
 
+/*
+#include <functional>
+#include <stdlib.h>
 #include <swilib.h>
-#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <fstream>
-/*
-using namespace std;
 
 
 
-int main(int argc, char** argv)
+int main()
 {
-    fstream file;
-    file.open ("0:\\Misc\\elf3\\log.txt", std::ios::out | std::ios::in | std::ios::app);
+    std::ofstream myfile;
+    myfile.open( "4:\\elf\\example.txt" );
 
-    char buf[128] = "Hello";
-    file << buf << endl;
-    file.close();
+    myfile << "Writing";
 
+    myfile.close();
 
     kill_elf();
-    return 0;
 }
-
 */
 
+
+extern "C" {
+
+int __dso_handle;
+
+
+void __cxa_atexit() {}
+
+void __sync_synchronize(){}
+
+bool __atomic_compare_exchange_4(volatile void*, void*, unsigned int, bool, int, int) {
+    return false;
+}
+
+}
 
 
