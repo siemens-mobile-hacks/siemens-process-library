@@ -3,7 +3,17 @@
 
 
 
-void lcd_draw_image(LCDLAYER *layer, int x, int y, image_t *_img)
+void directRedrawGui()
+{
+    GUI *g = GetTopGUI();
+    if(g) {
+        int (**m)(void*) = (int (**)(void*))g->methods;
+        m[0](g);
+    }
+}
+
+
+void lcd_draw_image(LCDLAYER *layer, int x, int y, const image_t *_img)
 {
     if(!_img) return;
     if(!_img->bitmap) return;
@@ -19,7 +29,7 @@ void lcd_draw_image(LCDLAYER *layer, int x, int y, image_t *_img)
 
 
 
-void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, IMGHDR *img)
+void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, const IMGHDR *img)
 {
     if(!img) return;
     if(!img->bitmap) return;
@@ -27,7 +37,7 @@ void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, IMGHDR *img)
     RECT rc;
     DRWOBJ drwobj;
     StoreXYWHtoRECT(&rc, x, y, img->w, img->h);
-    SetPropTo_Obj5(&drwobj, &rc, 0, img);
+    SetPropTo_Obj5(&drwobj, &rc, 0, (IMGHDR *)img);
     PushDRWOBJOnLAYER(&drwobj, layer);
 }
 
@@ -69,12 +79,12 @@ void lcd_draw_invertrect(LCDLAYER *layer, int x1,int y1,int x2,int y2)
 }
 
 
-void lcd_draw_eimg(LCDLAYER *layer, int x, int y, EIMGHDR *eimg)
+void lcd_draw_eimg(LCDLAYER *layer, int x, int y, const EIMGHDR *eimg)
 {
    RECT rc;
    DRWOBJ drwobj;
    StoreXYWHtoRECT(&rc,x,y,eimg->w,eimg->h);
-   SetPropTo_obj0x17(&drwobj,&rc, 0, eimg, 0, 0);
+   SetPropTo_obj0x17(&drwobj,&rc, 0, (EIMGHDR*)eimg, 0, 0);
    PushDRWOBJOnLAYER(&drwobj, layer);
 }
 

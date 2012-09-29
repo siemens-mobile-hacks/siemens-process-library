@@ -13,6 +13,11 @@ static CoreMutex mutex = {.locks = 0};
 int __printh_pid = -1;
 static const int lock_print = 1;
 static int queue;
+static int dl_uart_h = -1;
+
+static void stub(){}
+void (*p_uart_set_speed)(unsigned int uart, unsigned int speed) = stub;
+void (*p_uart_poll_tx_string)(unsigned int uart, const char *msg) = stub;
 
 
 void initUsart()
@@ -29,11 +34,27 @@ void initUsart()
     if(lock_print)
         return;
 
+    dl_uart_h = dlopen("libuart.so");
+    if(dl_uart_h > -1) {
+        p_uart_set_speed = dlsym(dl_uart_h, "uart_set_speed");
+        p_uart_poll_tx_string = dlsym(dl_uart_h, "uart_poll_tx_string");
+
+        if(!p_uart_set_speed || !p_uart_poll_tx_string) {
+            ShowMSG(1, (int)"Failed to load libuart");
+            p_uart_set_speed = stub;
+            p_uart_poll_tx_string = stub;
+        }
+    } else {
+        ShowMSG(1, (int)"libuart not found");
+        p_uart_set_speed = stub;
+        p_uart_poll_tx_string = stub;
+    }
+
     if(!GetPeripheryState (2, 4))
         return;
 
     lockMutex(&mutex);
-    uart_set_speed(0, USART_115200);
+    p_uart_set_speed(0, USART_115200);
     unlockMutex(&mutex);
 }
 
@@ -54,6 +75,11 @@ void asyncPrintFini()
 {
     if(lock_print)
         return;
+
+    p_uart_set_speed = stub;
+    p_uart_poll_tx_string = stub;
+    dlclose(dl_uart_h);
+
 
     extern void abort_printing();
     int p = __printh_pid;
@@ -137,7 +163,7 @@ int print_handle(int argc, char **argv)
         if(lock_print)
             continue;
 
-        uart_poll_tx_string(0, data);
+        p_uart_poll_tx_string(0, data);
     }
 
     destroyQueue(queue);

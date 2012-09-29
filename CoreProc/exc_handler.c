@@ -269,8 +269,8 @@ void NU_ExceptionsInit()
 
     //Исключения
     data_abort_reg(da_handler_vector);
-    prefetch_abort_reg(pa_handler_vector);
-    und_instruct_reg(ui_handler_vector);
+    //prefetch_abort_reg(pa_handler_vector);
+    //und_instruct_reg(ui_handler_vector);
 
     //Другие ошибки
     if (!is_nsg)
@@ -311,8 +311,8 @@ void NU_ExceptionsDeInit()
 
     //Исключения
     data_abort_reg(da_def_handler);
-    prefetch_abort_reg(pa_def_handler);
-    und_instruct_reg(ui_def_handler);
+    //prefetch_abort_reg(pa_def_handler);
+    //und_instruct_reg(ui_def_handler);
 
     //Другие ошибки
     if (!is_nsg)

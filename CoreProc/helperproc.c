@@ -84,7 +84,7 @@ void helperproc_handle(int argc, void *argv)
         sprintf(d, "%X\n%d\n %d - %d", event.run, event.data[0], asize, message_size);
         ShowMSG(1, (int)d);*/
 
-        printf("helper: asize %d (%X, %X, %X)\n", asize, event.data[0], event.data[1], event.data[2]);
+        //printf("helper: asize %d (%X, %X, %X)\n", asize, event.data[0], event.data[1], event.data[2]);
 
         if(event.run)
             event.run(event.data[0], event.data[1], event.data[2]);

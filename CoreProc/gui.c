@@ -7,7 +7,7 @@
 #include <spl/gui.h>
 #include <spl/mutex.h>
 
-
+extern void *(*spl_virtual2physical)(void *);
 
 typedef struct {
     GUI gui;
@@ -249,19 +249,20 @@ static int onKey(CoreGUI *data, GUI_MSG *msg)
 
     void core_gui_key_disp(CoreGUIEvent *event)
     {
+        event->msg.gbsmsg = &event->gbs_msg;
         event->callback(event->head.id, &event->msg);
     }
 
+
     CoreGUIEvent event;
 
-    event.head.id = data->id;
+    event.head.id = /*data->id*/777;
     event.head.type = GUI_EVENT;
     event.head.dispatcher = (void (*)(void *))core_gui_key_disp;
     event.callback = (void (*)(int, void *))data->onKey;
     event.gui = data;
-    memcpy(&event.msg, msg, sizeof *msg);
+    memcpy(&event.msg, msg, sizeof(GUI_MSG));
     memcpy(&event.gbs_msg, msg->gbsmsg, sizeof(GBS_MSG));
-    event.msg.gbsmsg = &event.gbs_msg;
 
     sendEvent(data->pid, &event, sizeof event);
     return (0);
@@ -319,7 +320,7 @@ int createGUI(RECT *canvas,
     data->used = 1;
 
     data->pid = getpid();
-    data->gui.canvas = canvas;
+    data->gui.canvas = spl_virtual2physical(canvas);
     data->gui.methods = (void *)coreGUIMethods;
     data->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     data->onRedraw = onRedraw;

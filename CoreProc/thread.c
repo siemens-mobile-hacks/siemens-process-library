@@ -101,7 +101,7 @@ int freeCoreThreadData(int _tid)
 
 
 
-int tidByTask(NU_TASK *task)
+int tidByTask(MMU_TASK *task)
 {
     if(!task)
         return -1;
@@ -122,7 +122,7 @@ int tidByTask(NU_TASK *task)
 
 int gettid()
 {
-    NU_TASK *task = NU_Current_Task_Pointer();
+    MMU_TASK *task = (MMU_TASK*)NU_Current_Task_Pointer();
     return tidByTask(task);
 }
 
@@ -224,7 +224,7 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
         return -4;
     }
 
-    NU_TASK *task = malloc(sizeof(*task));
+    MMU_TASK *task = malloc(sizeof(*task));
     memset(task, 0, sizeof *task);
     thread->t.task = task;
     thread->t.stack = stack;
@@ -241,7 +241,7 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     sprintf(thread->name, "thread_%d", id);
 
     int e;
-    if((e = NU_Create_Task(thread->t.task, thread->name,
+    if((e = NU_Create_Task((NU_TASK*)thread->t.task, thread->name,
                        thread_handle, id, thread,
                        stack, stack_size, prio, 0,
                        NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
@@ -263,7 +263,7 @@ int createConfigurableThread(TaskConf *conf, int (*handle)(void *), void *data, 
     thread->exit_wait_cond = createAdvWaitCond("thread_wait", 0);
 
     if(run)
-        NU_Resume_Task(task);
+        NU_Resume_Task((NU_TASK*)task);
 
     leaveProcessCriticalCode(pid);
     return id;
@@ -282,9 +282,9 @@ int destroyThread(int tid)
     enterProcessCriticalCode(pid);
     printf("Entered\n");
 
-    NU_Suspend_Task(thread->t.task);
-    NU_Terminate_Task(thread->t.task);
-    NU_Delete_Task(thread->t.task);
+    NU_Suspend_Task((NU_TASK*)thread->t.task);
+    NU_Terminate_Task((NU_TASK*)thread->t.task);
+    NU_Delete_Task((NU_TASK*)thread->t.task);
 
     void *d = thread->t.stack;
     thread->t.stack = 0;
@@ -316,7 +316,7 @@ int suspendThread(int tid)
     if(!thread || thread->t.id < 0)
         return -1;
 
-    return NU_Suspend_Task(thread->t.task);
+    return NU_Suspend_Task((NU_TASK*)thread->t.task);
 }
 
 
@@ -326,7 +326,7 @@ int resumeThread(int tid)
     if(!thread || thread->t.id < 0)
         return -1;
 
-    return NU_Resume_Task(thread->t.task);
+    return NU_Resume_Task((NU_TASK*)thread->t.task);
 }
 
 

@@ -8,14 +8,16 @@
 #include <fcntl.h>
 #include <spl/socket.h>
 #include <spl/io.h>
+#include <messhook.h>
 
 
-
-static CSM_DESC icsmd;
-static CSM_RAM *old_icsm;
-int IDLECSM_onMessage(CSM_RAM *ram, GBS_MSG *msg);
-int (*old_icsm_onMessage)(CSM_RAM *ram, GBS_MSG *msg);
+static void onMessageHook(CSM_RAM *ram, GBS_MSG *msg);
+static int message_h = -1;
 CoreArray sockets_mess_handless;
+
+extern int (*p_createMessageHook)(message_handler_t h);
+extern int (*p_deleteMessageHook)(int id);
+
 
 struct HandleQueue
 {
@@ -24,32 +26,25 @@ struct HandleQueue
 };
 
 
+
 void replace_idle_message_func()
 {
     corearray_init(&sockets_mess_handless, 0);
-
-    CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    memcpy(&icsmd, icsm->constr, sizeof(icsmd));
-    old_icsm = (CSM_RAM *)icsm->constr;
-    old_icsm_onMessage = icsmd.onMessage;
-    icsmd.onMessage = IDLECSM_onMessage;
-    icsm->constr = &icsmd;
+    message_h = p_createMessageHook(onMessageHook);
 }
 
 
 void restore_idle_message_func()
 {
     corearray_release(&sockets_mess_handless);
-    CSM_RAM *icsm = FindCSMbyID(CSM_root()->idle_id);
-    icsm->constr = (void *)old_icsm;
+    p_deleteMessageHook(message_h);
 }
 
 
-
-int IDLECSM_onMessage(CSM_RAM *ram, GBS_MSG *msg)
+void onMessageHook(CSM_RAM *ram, GBS_MSG *msg)
 {
     if (msg->msg != MSG_HELPER_TRANSLATOR )
-        goto end;
+        return;
 
     CoreArray *arr = &sockets_mess_handless;
     struct HandleQueue *h = 0;
@@ -60,9 +55,6 @@ int IDLECSM_onMessage(CSM_RAM *ram, GBS_MSG *msg)
         if(streamBySocket(h->sid) == (int)msg->data1)
             h->handler(h->sid, ram, msg);
     }
-
-end:
-    return old_icsm_onMessage(ram, msg);
 }
 
 
@@ -296,7 +288,7 @@ static ssize_t __read(int fd, void *_data, size_t size)
         return -1;
 
     if(size < 1 || !_data)
-        return 0;
+        return -1;
 
     CoreSocket *_sock = getSocketData(s->fd);
     char *data = (char *)_data;
@@ -330,7 +322,7 @@ static ssize_t __write(int fd, const void *_data, size_t size)
     }
 
     if(size < 1 || !_data)
-        return 0;
+        return -1;
 
     CoreSocket *_sock = getSocketData(s->fd);
     const char *data = (char *)_data;
@@ -445,7 +437,7 @@ int socket(int af, int type, int protocol)
 
     void socket_i(SocketImpl *i)
     {
-        i->ret = __socket(i->af, i->type, i->protocol);
+        i->ret = _socket(i->af, i->type, i->protocol);
         NU_Release_Semaphore(&i->wait);
     }
 
@@ -547,7 +539,7 @@ int connect(int sock, struct sockaddr *name, int namelen)
         sa->unk1 = 0;
         sa->unk2 = 0;
 
-        i->err = __connect(i->s, sa, i->namelen);
+        i->err = _connect(i->s, sa, i->namelen);
         NU_Release_Semaphore(&i->wait);
     }
 

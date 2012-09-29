@@ -28,6 +28,9 @@ void _init()
     void createIOResCtl();
     createIOResCtl();
 
+    void messageHookInit();
+    messageHookInit();
+
     void socketsInit();
     socketsInit();
 
@@ -58,6 +61,7 @@ void _init()
     void guiInit();
     guiInit();
 
+
     extern void *__ex;
     Elf32_Exec *ex = (Elf32_Exec*)&__ex;
 
@@ -87,6 +91,9 @@ void _fini()
 
     void socketsFini();
     socketsFini();
+
+    void messageHookFini();
+    messageHookFini();
 
     void closeIOResCtl();
     closeIOResCtl();

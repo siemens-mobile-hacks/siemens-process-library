@@ -118,6 +118,10 @@ static off_t __lseek(int fd, off_t offset, int whence)
 
 int open(const char *file, int flags, ...)
 {
+    if(GBS_GetCurCepid() != (unsigned short)-1) {
+        return __open(file, flags);
+    }
+    
     int stream = open_fd();
     if(stream < 0)
         return stream;

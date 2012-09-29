@@ -4,7 +4,7 @@
 #include <spl/coreevent.h>
 #include <spl/timer.h>
 #include <spl/process.h>
-
+#include <spl/static_data_base.h>
 
 
 typedef struct {
@@ -13,52 +13,43 @@ typedef struct {
     void *userdata;
 }TimerEvent __attribute__((aligned(4)));
 
-struct TimerData {
+typedef struct {
     NU_TIMER timer;
     void (*callback)(int, void *);
+    int id;
     int pid;
     int sended;
     int dt_id;
     char last;
     void *userdata;
-};
+}TimerData;
 
-static struct TimerData timers[128] = {};
+
+#define MAX_TIMER_ID 128
+declare_static_db(TimerData, timerData, MAX_TIMER_ID);
 
 
 void timersInit()
 {
-    for(int i=0; i<128; ++i) {
-        timers[i].pid = -1;
-        timers[i].last = 0;
-    }
+    timerDataInit();
 }
 
 
 void timersFini()
 {
-
+    timerDataFini();
 }
 
-
-static int find_best_id()
-{
-    for(int i=0; i<128; ++i)
-        if(timers[i].pid == -1)
-            return i;
-    return -1;
-}
 
 
 static void timer_displatcher(TimerEvent *event)
 {
-    if(timers[event->head.id].pid < 0)
+    if(_db[event->head.id].pid < 0)
         return;
 
-    timers[event->head.id].sended --;
-    if(timers[event->head.id].last) {
-        timers[event->head.id].pid = -1;
-        timers[event->head.id].last = 0;
+    _db[event->head.id].sended --;
+    if(_db[event->head.id].last) {
+        freeTimerDataData(event->head.id);
         return;
     }
 
@@ -72,27 +63,25 @@ static void timer_handle(unsigned long id) //?
     TimerEvent event;
     event.head.id = id;
     event.head.type = TIMER_EVENT;
-    event.callback = timers[id].callback;
+    event.callback = _db[id].callback;
     event.head.dispatcher = (void (*)(void*))timer_displatcher;
-    event.userdata = timers[id].userdata;
+    event.userdata = _db[id].userdata;
 
-    timers[id].sended++;
-    sendEvent(timers[id].pid, &event, sizeof event);
+    _db[id].sended++;
+    sendEvent(_db[id].pid, &event, sizeof event);
 }
 
 
 int timerStart(unsigned long time, void (*callback)(int, void *), void *userdata)
 {
-    int id = find_best_id(), err = 0; // get best id
-    if(id < 0)
+    TimerData *timer = newTimerDataData();
+    if(!timer)
         return -1;
 
     int pid = getpid();
     enterProcessCriticalCode(pid);
     if(isProcessKilling(pid) == 1)
         return -1;
-
-    struct TimerData *timer = &timers[id];
 
     timer->callback = callback;
     timer->pid = pid;
@@ -101,40 +90,59 @@ int timerStart(unsigned long time, void (*callback)(int, void *), void *userdata
     timer->userdata = userdata;
 
 
-    err = NU_Create_Timer((NU_TIMER*)timer, "ololo", timer_handle, id, time, time, NU_ENABLE_TIMER);
+    int err = NU_Create_Timer((NU_TIMER*)timer, "ololo", timer_handle, timer->id, time, time, NU_ENABLE_TIMER);
     if(err != NU_SUCCESS) {
         printf("timerStart: err %d\n", err);
     } else
-        timer->dt_id = addProcessDtors(timer->pid, (void (*)(void*, void*))timerStop, (void *)id, 0);
+        timer->dt_id = addProcessDtors(timer->pid, (void (*)(void*, void*))timerStop, (void *)timer->id, 0);
 
     leaveProcessCriticalCode(pid);
 
     return err == NU_SUCCESS?
-            id : err;
+            timer->id : err;
+}
+
+
+int timerReset(int id, unsigned long time, void (*callback)(int, void *), void *userdata)
+{
+    TimerData *timer = checkTimerDataData(id);
+    if(!timer)
+        return -1;
+
+    timer->callback = callback;
+    timer->pid = getpid();
+    timer->sended = 0;
+    timer->last = 0;
+    timer->userdata = userdata;
+
+    return NU_Reset_Timer((NU_TIMER*)timer, timer_handle, time, time, NU_ENABLE_TIMER);
 }
 
 
 int timerPause(int id)
 {
-    struct TimerData *timer = &timers[id];
+    TimerData *timer = checkTimerDataData(id);
+    if(!timer)
+        return -1;
+
     return NU_Control_Timer((NU_TIMER*)timer, NU_DISABLE_TIMER);
 }
 
 
 int timerResume(int id)
 {
-    struct TimerData *timer = &timers[id];
+    TimerData *timer = checkTimerDataData(id);
+    if(!timer)
+        return -1;
+
     return NU_Control_Timer((NU_TIMER*)timer, NU_ENABLE_TIMER);
 }
 
 
 int timerStop(int id)
 {
-    if(id < 0)
-        return -1;
-
-    struct TimerData *timer = &timers[id];
-    if(timer->pid < 0 || timer->last)
+    TimerData *timer = checkTimerDataData(id);
+    if(!timer)
         return -1;
 
     eraseProcessDtor(timer->pid, timer->dt_id);
@@ -151,5 +159,13 @@ int timerStop(int id)
 }
 
 
+void *timerUserData(int id)
+{
+    TimerData *timer = checkTimerDataData(id);
+    if(!timer)
+        return 0;
+
+    return timer->userdata;
+}
 
 

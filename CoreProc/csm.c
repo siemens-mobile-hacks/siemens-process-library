@@ -29,6 +29,7 @@ typedef struct {
     int minus11;
     unsigned short name_body[128];
     int can_kill;
+    CSM_RAM *cram_p;
 
     void (*onCreate)(int id, CSM_RAM *);
     void (*onClose)(int id, CSM_RAM *);
@@ -119,6 +120,8 @@ void core_csm_create(CSM_RAM *data)
 
     CoreCSM *c = getCoreCSMFormRam(data);
     c->can_kill = 1;
+    c->cram_p = data;
+
     if(!c->onCreate)
         return;
 

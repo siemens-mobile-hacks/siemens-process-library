@@ -48,7 +48,6 @@
 			<Add option="-fini=_fini" />
 			<Add library="gcc" />
 			<Add library="crt_helper" />
-			<Add library="usart" />
 		</Linker>
 		<Unit filename="_start.c">
 			<Option compilerVar="CC" />
@@ -111,6 +110,9 @@
 		<Unit filename="processbridge.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="procmesshook.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="queue.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -120,7 +122,6 @@
 		<Unit filename="signals.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="signals.h" />
 		<Unit filename="socket.c">
 			<Option compilerVar="CC" />
 		</Unit>

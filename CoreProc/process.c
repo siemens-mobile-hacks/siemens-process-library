@@ -17,14 +17,27 @@ typedef struct
     void *d[2];
 }TorsList;
 
+int vpatcher_h = -1;
 char *_strdup(const char *str);
 void kill_hisr_chek(int _pid, int tid, int code, int hisr, int signum);
 static CoreProcess core_process[MAX_PROCESS_ID];
 static CoreMutex pb_mutex;
-
+void *(*spl_virtual2physical)(void *) = 0;
 
 void processInit()
 {
+    vpatcher_h = dlopen("libvpatcher.so");
+    if(vpatcher_h > -1)
+    {
+        spl_virtual2physical = dlsym(vpatcher_h, "virtual2physical");
+    }
+
+    if(!spl_virtual2physical) {
+        ShowMSG(1, (int)"libvpatcher notfound or 'virtual2physical' not exist");
+        void *stub(void *a){ return 0; };
+        spl_virtual2physical = stub;
+    }
+
     createMutex(&pb_mutex);
     for(int i =0; i<MAX_PROCESS_ID; ++i) {
         core_process[i].t.id = -1;
@@ -45,7 +58,7 @@ void processFini()
         if(!core_process[i].t.task)
             continue;
 
-        int err = NU_Task_Information(core_process[i].t.task, name, &status, &sched_cnt, &prio,
+        int err = NU_Task_Information((NU_TASK*)core_process[i].t.task, name, &status, &sched_cnt, &prio,
                             &preemt, &time_slice, &stack_base, &stack_sz, &min_stack);
 
         if(err == NU_SUCCESS) {
@@ -57,6 +70,7 @@ void processFini()
 
 
     destroyMutex(&pb_mutex);
+    dlclose(vpatcher_h);
 }
 
 
@@ -140,7 +154,7 @@ int sendEvent(int pid, void *event, size_t size)
     if(!proc || !proc->t.events)
         return -1;
 
-    return NU_Send_To_Queue(proc->t.events, event, size, NU_NO_SUSPEND);
+    return NU_Send_To_Queue(proc->t.events, event, size/4, NU_NO_SUSPEND);
 }
 
 
@@ -155,7 +169,7 @@ int getppid()
 
 
 
-int pidByTask(NU_TASK *task)
+int pidByTask(MMU_TASK *task)
 {
     if(!task)
         return -1;
@@ -181,7 +195,7 @@ int pidByTask(NU_TASK *task)
 
 int getpid()
 {
-    NU_TASK *task = NU_Current_Task_Pointer();
+    MMU_TASK *task = (MMU_TASK*)NU_Current_Task_Pointer();
     if(!task) {
         return -1;
     }
@@ -211,18 +225,21 @@ static void kill_process(int _pid)
 
     int err = 0;
 
-    NU_Suspend_Task(proc->t.task);
-    if( NU_Terminate_Task(proc->t.task) != NU_SUCCESS) {
+    NU_Suspend_Task((NU_TASK*)proc->t.task);
+    if( NU_Terminate_Task((NU_TASK*)proc->t.task) != NU_SUCCESS) {
         printf("Cant kill task! %d\n", _pid);
         ShowMSG(1, (int)"Немогу убить таск!");
     }
 
-    if( (err = NU_Delete_Task(proc->t.task)) != NU_SUCCESS) {
+    if( (err = NU_Delete_Task((NU_TASK*)proc->t.task)) != NU_SUCCESS) {
         printf("Cant delete task! %d\n", _pid);
         ShowMSG(1, (int)"Немогу удалить таск!");
     }
 
     destroyMutex(&proc->critical_code.mutex);
+
+    if(proc->kostil.kik)
+        proc->kostil.kik(proc->kostil.d);
 
     if(!err) {
         if(proc->t.is_stack_freeable)
@@ -232,9 +249,6 @@ static void kill_process(int _pid)
         free(proc->t.task);
         proc->t.task = 0;
     }
-
-    if(proc->kostil.kik)
-        proc->kostil.kik(proc->kostil.d);
 
     printf("process %d destroyed\n", proc->t.id);
     //SetVibration(40);
@@ -559,13 +573,13 @@ void kill_hisr_chek(int _pid, int tid, int code, int hisr, int signum)
         proc->terminated = 1;
         proc->retcode = code;
 
-        int r = NU_Terminate_Task(proc->t.task);
+        int r = NU_Terminate_Task((NU_TASK*)proc->t.task);
         printf("Term: %d\n", r);
 
-        r = NU_Reset_Task(proc->t.task, _pid, proc);
+        r = NU_Reset_Task((NU_TASK*)proc->t.task, _pid, proc);
         printf("Reset: %d\n", r);
 
-        r = NU_Resume_Task(proc->t.task);
+        r = NU_Resume_Task((NU_TASK*)proc->t.task);
         //printf("Resume: %d\n", r);
         }
     }
@@ -621,7 +635,8 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
         .prio = DEFAULT_PRIO,
         .stack_size = DEFAULT_STACK_SIZE,
         .stack = 0,
-        .is_stack_freeable = 1
+        .is_stack_freeable = 1,
+        .self_mmu = 0
     };
 
     if(!conf)
@@ -644,7 +659,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     short _pid = proc->t.id;
     int err = 0;
 
-    NU_TASK *task = malloc(sizeof *task);
+    MMU_TASK *task = malloc(sizeof *task);
     memset(task, 0, sizeof *task);
     proc->critical_code.locks = 0;
     proc->critical_code.pid = proc->critical_code.tid = -1;
@@ -666,7 +681,16 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     proc->siglist.signum = -1;
 
 
-    if( (err = NU_Create_Task(task, (char *)name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
+    char mmu_dep_name[24];
+
+    if(conf->self_mmu) {
+        strncpy(mmu_dep_name+1, name, 23);
+        mmu_dep_name[0] = 0x1;
+    } else
+        strncpy(mmu_dep_name, name, 24);
+
+
+    if( (err = NU_Create_Task((NU_TASK*)task, (char *)mmu_dep_name, handle, _pid, proc, stack, stack_size, prio, 0, NU_PREEMPT, NU_NO_START)) != NU_SUCCESS )
     {
         free(task);
 
@@ -704,7 +728,7 @@ int createConfigurableProcess(TaskConf *conf, const char *name, int (*_main)(int
     addProcessToParent(proc->ppid, _pid);
 
     if(run)
-        NU_Resume_Task(task);
+        NU_Resume_Task((NU_TASK*)task);
 
     return _pid;
 }
@@ -720,9 +744,9 @@ int resetProcess(int pid, int argc, char **argv)
     proc->argc = argc;
     proc->argv = argv;
 
-    NU_Suspend_Task(proc->t.task);
-    NU_Terminate_Task(proc->t.task);
-    NU_Reset_Task(proc->t.task, pid, proc);
+    NU_Suspend_Task((NU_TASK*)proc->t.task);
+    NU_Terminate_Task((NU_TASK*)proc->t.task);
+    NU_Reset_Task((NU_TASK*)proc->t.task, pid, proc);
 
     return 0;
 }
@@ -734,7 +758,7 @@ int suspendProcess(int pid)
     if(!proc || proc->t.id < 0)
         return -1;
 
-    return NU_Suspend_Task(proc->t.task);
+    return NU_Suspend_Task((NU_TASK*)proc->t.task);
 }
 
 
@@ -760,7 +784,7 @@ int resumeProcess(int pid)
     if(!proc || proc->t.id < 0)
         return -1;
 
-    return NU_Resume_Task(proc->t.task);
+    return NU_Resume_Task((NU_TASK*)proc->t.task);
 }
 
 
@@ -1063,10 +1087,5 @@ int isProcessKilling(int pid)
 
     return proc->terminated > 0;
 }
-
-
-
-
-
 
 

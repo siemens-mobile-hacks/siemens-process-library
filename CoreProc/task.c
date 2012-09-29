@@ -9,6 +9,7 @@ void initTaskConf(TaskConf *conf)
     conf->stack = 0;
     conf->stack_size = 0;
     conf->is_stack_freeable = 0;
+    conf->self_mmu = 0;
 }
 
 
