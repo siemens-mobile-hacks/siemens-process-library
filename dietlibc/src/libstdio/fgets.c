@@ -26,3 +26,9 @@ fini:
 }
 
 char*fgets(char*s,int size,FILE*stream) __attribute__((weak,alias("fgets_unlocked")));
+
+
+int getc(FILE *s)
+{
+    return fgetc_unlocked(s);
+}

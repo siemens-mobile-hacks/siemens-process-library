@@ -123,13 +123,17 @@ extern char *   tzname[];
 #define FORCE_LOWER_CASE 0x100
 
 size_t
+strftime_tz(char * const s, const size_t maxsize, const char * const format,
+            const struct tm * const t, const struct strftime_locale *locale);
+
+size_t
 strftime(s, maxsize, format, t)
 char * const        s;
 const size_t        maxsize;
 const char * const  format;
 const struct tm * const t;
 {
-    return strftime_tz(s, maxsize, format, t, Locale);
+    return strftime_tz(s, maxsize, format, t, (struct strftime_locale *)Locale);
 }
 
 size_t
