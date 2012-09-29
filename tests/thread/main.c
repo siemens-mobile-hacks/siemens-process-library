@@ -6,14 +6,16 @@
 
 
 
-int _tid[25] = {-1};
-int csz = 20;
+int _tid[130] = {-1};
+int csz = 129;
+int ololo = 0;
 
 
 
 int thread_main(void *d)
 {
     printf("thread_main: pid: %d | tid: %d\n", getpid(), gettid());
+    ololo++;
     return 0;
 }
 
@@ -33,6 +35,13 @@ int main()
 
     printf("All threads finished\n");
     printf("Ram %d\n", GetFreeRamAvail());
+
+
+    char d[24];
+    sprintf(d, "%d threads done", ololo);
+    ShowMSG(1, (int)d);
+
+    NU_Sleep(216*3);
     return 0;
 }
 
