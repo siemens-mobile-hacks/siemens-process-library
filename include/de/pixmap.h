@@ -7,11 +7,6 @@
 #include "pixtypes.h"
 
 
-#ifndef __inl
-    #define __inl static inline
-#endif
-
-
 #define plCalcSeek(x, y, img) ((y * img->w) + x)
 #define plAlpha(color32) (color32 >> 24 & 0xff)
 #define plRed(color32) (color32 >> 16 & 0xFF)

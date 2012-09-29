@@ -16,6 +16,7 @@ void CleanTLB();
 int *GetTBaseAddr();
 void UnLockAccess();
 void ExecuteIMB();
+void *virtual2physical(void *);
 
 //Получение значения байта из адреса
 char GetByteFromAddress(void *addr);

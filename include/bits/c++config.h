@@ -523,8 +523,6 @@ namespace std
 /* Define to 1 if you have the <endian.h> header file. */
 /* #undef _GLIBCXX_HAVE_ENDIAN_H */
 
-/* Define if ENODATA exists. */
-#define _GLIBCXX_HAVE_ENODATA 1
 
 /* Define if ENOLINK exists. */
 #define _GLIBCXX_HAVE_ENOLINK 1
@@ -534,9 +532,6 @@ namespace std
 
 /* Define if ENOSTR exists. */
 #define _GLIBCXX_HAVE_ENOSTR 1
-
-/* Define if ENOTRECOVERABLE exists. */
-#define _GLIBCXX_HAVE_ENOTRECOVERABLE 1
 
 /* Define if ENOTSUP exists. */
 #define _GLIBCXX_HAVE_ENOTSUP 1
@@ -628,9 +623,6 @@ namespace std
 
 /* Define if you have the iconv() function. */
 #define _GLIBCXX_HAVE_ICONV 1
-
-/* Define to 1 if you have the <ieeefp.h> header file. */
-#define _GLIBCXX_HAVE_IEEEFP_H 1
 
 /* Define if int64_t is available in <stdint.h>. */
 #define _GLIBCXX_HAVE_INT64_T 1
@@ -796,9 +788,6 @@ namespace std
 
 /* Define to 1 if you have the <string.h> header file. */
 #define _GLIBCXX_HAVE_STRING_H 1
-
-/* Define to 1 if you have the `strtof' function. */
-#define _GLIBCXX_HAVE_STRTOF 1
 
 /* Define to 1 if you have the `strtold' function. */
 /* #undef _GLIBCXX_HAVE_STRTOLD */

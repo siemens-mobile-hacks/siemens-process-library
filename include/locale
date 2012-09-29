@@ -1,83 +1,45 @@
-/*	Copyright (C) 2004 Garrett A. Kajmowicz
+// Locale support -*- C++ -*-
 
-	This file is part of the uClibc++ Library.
+// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
+// 2006, 2007, 2009, 2010
+// Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
 
-	This library is free software; you can redistribute it and/or
-	modify it under the terms of the GNU Lesser General Public
-	License as published by the Free Software Foundation; either
-	version 2.1 of the License, or (at your option) any later version.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-	This library is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-	Lesser General Public License for more details.
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
 
-	You should have received a copy of the GNU Lesser General Public
-	License along with this library; if not, write to the Free Software
-	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
 
-#include <basic_definitions>
-#include <cstddef>
-#include <string>
+//
+// ISO C++ 14882: 22.1  Locales
+//
 
-#ifndef __HEADER_STD_LOCALE
-#define __HEADER_STD_LOCALE 1
+/** @file include/locale
+ *  This is a Standard C++ Library header.
+ */
 
-#pragma GCC visibility push(default)
+#ifndef _GLIBCXX_LOCALE
+#define _GLIBCXX_LOCALE	1
 
-namespace std{
-	class _UCXXEXPORT locale {
-	public:
-	// types:
-		class facet;
-		class id;
-		typedef unsigned char category;
+#pragma GCC system_header
 
-		static const category
-		none     = 0,
-		collate  = 0x01, ctype    = 0x02,
-		monetary = 0x04, numeric  = 0x08,
-		time = 0x10, messages = 0x20,
-		all = collate | ctype | monetary | numeric | time  | messages;
+#include <bits/localefwd.h>
+#include <bits/locale_classes.h>
+#include <bits/locale_facets.h>
+#include <bits/locale_facets_nonio.h>
 
-		// construct/copy/destroy:
-		locale() throw(){
-			return;
-		}
-		locale(const locale& other) throw(){
-			(void)other;
-			return;
-		}
-		locale(const char *) throw(){
-			return;
-		}
-		~locale() throw(){
-			return;
-		}
-
-		const locale& operator=(const locale&) throw(){
-			return *this;
-		}
-		std::string name() const { return "C"; }
-	};
-
-	class _UCXXEXPORT locale::facet {
-		friend class locale;
-		explicit facet(size_t = 0){
-			return;
-		}
-		virtual ~facet(){
-			return;
-		}
-	};
-
-	class _UCXXEXPORT locale::id {
-		id(){ }
-	};
-
-}
-
-#pragma GCC visibility pop
-
-#endif
+#endif /* _GLIBCXX_LOCALE */

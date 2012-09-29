@@ -12,10 +12,11 @@ extern "C" {
 
 
 int timerStart(unsigned long time, void (*callback)(int, void *), void *userdata);
+int timerReset(int id, unsigned long time, void (*callback)(int, void *), void *userdata);
 int timerPause(int timer);
 int timerResume(int timer);
 int timerStop(int timer);
-
+void *timerUserData(int id);
 
 #ifdef __cplusplus
 }

@@ -1172,11 +1172,11 @@ void REDRAW(void)
 __defn( 0x0172)
 
 __inl
-int __socket(int af,int type,int protocol)
+int _socket(int af,int type,int protocol)
 __def( 0x0173, int, af, type, protocol)
 
 __inl
-int __connect(int sock, SOCK_ADDR * param2, int name_length)
+int _connect(int sock, SOCK_ADDR * param2, int name_length)
 __def( 0x0174, int, sock, param2, name_length)
 
 #ifndef __USE_SPL__
@@ -2503,6 +2503,19 @@ const char * _dlerror()
 __def( 0x2F7, const char *)
 
 #ifdef __NO_LIBC
+
+__inl
+int dlopen(const char *name)
+__def( 0x2EF, int, name)
+
+__inl
+void *dlsym(int handle, const char *name)
+__def( 0x2F0, void *, handle, name)
+
+__inl
+int dlclose(int handle)
+__def( 0x2F1, int, handle)
+
 __inl
 int setenv(const char *name, const char *value, int replace)
 __def( 0x2F2, int, name, value, replace)

@@ -104,7 +104,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #if __EXCEPTIONS
     throw __concurrence_lock_error();
 #else
-    //__builtin_abort();
+    __builtin_abort();
 #endif
   }
 
@@ -114,7 +114,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #if __EXCEPTIONS
     throw __concurrence_unlock_error();
 #else
-    //__builtin_abort();
+    __builtin_abort();
 #endif
   }
 
@@ -125,7 +125,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #if __EXCEPTIONS
     throw __concurrence_broadcast_error();
 #else
-    //__builtin_abort();
+    __builtin_abort();
 #endif
   }
 
@@ -135,7 +135,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #if __EXCEPTIONS
     throw __concurrence_wait_error();
 #else
-    //__builtin_abort();
+    __builtin_abort();
 #endif
   }
 #endif

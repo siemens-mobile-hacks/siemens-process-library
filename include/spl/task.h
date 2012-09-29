@@ -8,9 +8,17 @@
 #define DEFAULT_STACK_SIZE 0x4000
 #define DEFAULT_PRIO 90
 
+typedef struct {
+ NU_TASK       tsk;
+ unsigned int  *as;
+ unsigned int  *coarse_page;
+ void          *ex;
+}MMU_TASK;
+
+
 typedef struct
 {
-    NU_TASK *task;
+    MMU_TASK *task;
     void *stack;
     char is_stack_freeable;
     unsigned int stack_size;
@@ -28,6 +36,7 @@ typedef struct
     unsigned int stack_size;
     void *stack;
     char is_stack_freeable;
+    char self_mmu;              // if set 1, The first byte is set to 0x01, it identify task as mmu dependent
 }TaskConf;
 
 
@@ -42,9 +51,9 @@ void setTaskConfigStackSize(TaskConf *conf, unsigned int sz);
 __inl
 short getShort(const char *data)
 {
-#ifndef __ASM_OPT
+#ifdef __ASM_OPT
     short val1;
-    asm(
+    __asm__ volatile(
         "mov     r0, %1 \n"
         "ldrb    r1, [r0, #1] \n"
         "lsl     r1, #8 \n"

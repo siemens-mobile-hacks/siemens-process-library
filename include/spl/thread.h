@@ -16,7 +16,7 @@ int suspendThread(int tid);
 int resumeThread(int tid);
 int destroyThread(int tid);
 
-int tidByTask(NU_TASK *task);
+int tidByTask(MMU_TASK *task);
 int gettid();
 int getptid();
 

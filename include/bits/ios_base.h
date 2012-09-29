@@ -41,7 +41,6 @@
 #include <ext/atomicity.h>
 #include <bits/localefwd.h>
 #include <bits/locale_classes.h>
-#include <exception>
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
@@ -51,8 +50,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // as permitted (but not required) in the standard, in order to provide
   // better type safety in iostream calls.  A side effect is that
   // expressions involving them are no longer compile-time constants.
-  enum _Ios_Fmtflags
-    {
+  enum _Ios_Fmtflags 
+    { 
       _S_boolalpha 	= 1L << 0,
       _S_dec 		= 1L << 1,
       _S_fixed 		= 1L << 2,
@@ -71,7 +70,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       _S_adjustfield 	= _S_left | _S_right | _S_internal,
       _S_basefield 	= _S_dec | _S_oct | _S_hex,
       _S_floatfield 	= _S_scientific | _S_fixed,
-      _S_ios_fmtflags_end = 1L << 16
+      _S_ios_fmtflags_end = 1L << 16 
     };
 
   inline _GLIBCXX_CONSTEXPR _Ios_Fmtflags
@@ -103,15 +102,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   { return __a = __a ^ __b; }
 
 
-  enum _Ios_Openmode
-    {
+  enum _Ios_Openmode 
+    { 
       _S_app 		= 1L << 0,
       _S_ate 		= 1L << 1,
       _S_bin 		= 1L << 2,
       _S_in 		= 1L << 3,
       _S_out 		= 1L << 4,
       _S_trunc 		= 1L << 5,
-      _S_ios_openmode_end = 1L << 16
+      _S_ios_openmode_end = 1L << 16 
     };
 
   inline _GLIBCXX_CONSTEXPR _Ios_Openmode
@@ -144,12 +143,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
 
   enum _Ios_Iostate
-    {
+    { 
       _S_goodbit 		= 0,
       _S_badbit 		= 1L << 0,
       _S_eofbit 		= 1L << 1,
       _S_failbit		= 1L << 2,
-      _S_ios_iostate_end = 1L << 16
+      _S_ios_iostate_end = 1L << 16 
     };
 
   inline _GLIBCXX_CONSTEXPR _Ios_Iostate
@@ -181,12 +180,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   { return __a = __a ^ __b; }
 
 
-  enum _Ios_Seekdir
-    {
+  enum _Ios_Seekdir 
+    { 
       _S_beg = 0,
       _S_cur = _GLIBCXX_STDIO_SEEK_CUR,
       _S_end = _GLIBCXX_STDIO_SEEK_END,
-      _S_ios_seekdir_end = 1L << 16
+      _S_ios_seekdir_end = 1L << 16 
     };
 
   // 27.4.2  Class ios_base
@@ -203,7 +202,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   {
   public:
 
-    /**
+    /** 
      *  @brief These are thrown to indicate problems with io.
      *  @ingroup exceptions
      *
@@ -428,15 +427,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  The type of an event callback function.
-     *  @param  event  One of the members of the event enum.
-     *  @param  ios_base  Reference to the ios_base object.
-     *  @param  int  The integer provided when the callback was registered.
+     *  @param  __e  One of the members of the event enum.
+     *  @param  __b  Reference to the ios_base object.
+     *  @param  __i  The integer provided when the callback was registered.
      *
      *  Event callbacks are user defined functions that get called during
      *  several ios_base and basic_ios functions, specifically imbue(),
      *  copyfmt(), and ~ios().
     */
-    typedef void (*event_callback) (event, ios_base&, int);
+    typedef void (*event_callback) (event __e, ios_base& __b, int __i);
 
     /**
      *  @brief  Add the callback __fn with parameter __index.
@@ -477,7 +476,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       // 0 => OK to delete.
       int
-      _M_remove_reference()
+      _M_remove_reference() 
       {
         // Be race-detector-friendly.  For more info see bits/c++config.
         _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(&_M_refcount);
@@ -556,10 +555,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Setting new format flags all at once.
-     *  @param  fmtfl  The new flags to set.
+     *  @param  __fmtfl  The new flags to set.
      *  @return  The previous format control flags.
      *
-     *  This function overwrites all the format flags with @a fmtfl.
+     *  This function overwrites all the format flags with @a __fmtfl.
     */
     fmtflags
     flags(fmtflags __fmtfl)
@@ -571,7 +570,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Setting new format flags.
-     *  @param  fmtfl  Additional flags to set.
+     *  @param  __fmtfl  Additional flags to set.
      *  @return  The previous format control flags.
      *
      *  This function sets additional flags in format control.  Flags that
@@ -587,8 +586,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Setting new format flags.
-     *  @param  fmtfl  Additional flags to set.
-     *  @param  mask  The flags mask for @a fmtfl.
+     *  @param  __fmtfl  Additional flags to set.
+     *  @param  __mask  The flags mask for @a fmtfl.
      *  @return  The previous format control flags.
      *
      *  This function clears @a mask in the format flags, then sets
@@ -605,9 +604,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Clearing format flags.
-     *  @param  mask  The flags to unset.
+     *  @param  __mask  The flags to unset.
      *
-     *  This function clears @a mask in the format flags.
+     *  This function clears @a __mask in the format flags.
     */
     void
     unsetf(fmtflags __mask)
@@ -626,7 +625,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Changing flags.
-     *  @param  prec  The new precision value.
+     *  @param  __prec  The new precision value.
      *  @return  The previous value of precision().
     */
     streamsize
@@ -649,7 +648,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
     /**
      *  @brief  Changing flags.
-     *  @param  wide  The new width value.
+     *  @param  __wide  The new width value.
      *  @return  The previous value of width().
     */
     streamsize
@@ -663,7 +662,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     // [27.4.2.4] ios_base static members
     /**
      *  @brief  Interaction with the standard C I/O objects.
-     *  @param  sync  Whether to synchronize or not.
+     *  @param  __sync  Whether to synchronize or not.
      *  @return  True if the standard streams were previously synchronized.
      *
      *  The synchronization referred to is @e only that between the standard
@@ -677,7 +676,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     // [27.4.2.3] ios_base locale functions
     /**
      *  @brief  Setting a new locale.
-     *  @param  loc  The new locale.
+     *  @param  __loc  The new locale.
      *  @return  The previous locale.
      *
      *  Sets the new locale for this stream, and then invokes each callback

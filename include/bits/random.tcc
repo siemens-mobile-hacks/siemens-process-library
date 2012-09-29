@@ -1,6 +1,6 @@
 // random number generation (out of line) -*- C++ -*-
 
-// Copyright (C) 2009, 2010, 2011 Free Software Foundation, Inc.
+// Copyright (C) 2009, 2010, 2011, 2012 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -48,6 +48,8 @@ namespace std _GLIBCXX_VISIBILITY(default)
     // kindly elides any unreachable paths.
     //
     // Preconditions:  a > 0, m > 0.
+    //
+    // XXX FIXME: as-is, only works correctly for __m % __a < __m / __a.
     //
     template<typename _Tp, _Tp __m, _Tp __a, _Tp __c, bool>
       struct _Mod
@@ -258,7 +260,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     constexpr size_t
     mersenne_twister_engine<_UIntType, __w, __n, __m, __r, __a, __u, __d,
 			    __s, __b, __t, __c, __l, __f>::tempering_u;
-   
+
   template<typename _UIntType,
 	   size_t __w, size_t __n, size_t __m, size_t __r,
 	   _UIntType __a, size_t __u, _UIntType __d, size_t __s,
@@ -471,9 +473,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __os.flags(__ios_base::dec | __ios_base::fixed | __ios_base::left);
       __os.fill(__space);
 
-      for (size_t __i = 0; __i < __n - 1; ++__i)
+      for (size_t __i = 0; __i < __n; ++__i)
 	__os << __x._M_x[__i] << __space;
-      __os << __x._M_x[__n - 1];
+      __os << __x._M_p;
 
       __os.flags(__flags);
       __os.fill(__fill);
@@ -498,6 +500,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       for (size_t __i = 0; __i < __n; ++__i)
 	__is >> __x._M_x[__i];
+      __is >> __x._M_p;
 
       __is.flags(__flags);
       return __is;
@@ -627,7 +630,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       for (size_t __i = 0; __i < __r; ++__i)
 	__os << __x._M_x[__i] << __space;
-      __os << __x._M_carry;
+      __os << __x._M_carry << __space << __x._M_p;
 
       __os.flags(__flags);
       __os.fill(__fill);
@@ -649,6 +652,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       for (size_t __i = 0; __i < __r; ++__i)
 	__is >> __x._M_x[__i];
       __is >> __x._M_carry;
+      __is >> __x._M_p;
 
       __is.flags(__flags);
       return __is;
@@ -726,40 +730,65 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     independent_bits_engine<_RandomNumberEngine, __w, _UIntType>::
     operator()()
     {
-      const long double __r = static_cast<long double>(_M_b.max())
-			    - static_cast<long double>(_M_b.min()) + 1.0L;
-      const result_type __m = std::log(__r) / std::log(2.0L);
-      result_type __n, __n0, __y0, __y1, __s0, __s1;
+      typedef typename _RandomNumberEngine::result_type _Eresult_type;
+      const _Eresult_type __r
+	= (_M_b.max() - _M_b.min() < std::numeric_limits<_Eresult_type>::max()
+	   ? _M_b.max() - _M_b.min() + 1 : 0);
+      const unsigned __edig = std::numeric_limits<_Eresult_type>::digits;
+      const unsigned __m = __r ? std::__lg(__r) : __edig;
+
+      typedef typename std::common_type<_Eresult_type, result_type>::type
+	__ctype;
+      const unsigned __cdig = std::numeric_limits<__ctype>::digits;
+
+      unsigned __n, __n0;
+      __ctype __s0, __s1, __y0, __y1;
+
       for (size_t __i = 0; __i < 2; ++__i)
 	{
 	  __n = (__w + __m - 1) / __m + __i;
 	  __n0 = __n - __w % __n;
-	  const result_type __w0 = __w / __n;
-	  const result_type __w1 = __w0 + 1;
-	  __s0 = result_type(1) << __w0;
-	  __s1 = result_type(1) << __w1;
-	  __y0 = __s0 * (__r / __s0);
-	  __y1 = __s1 * (__r / __s1);
-	  if (__r - __y0 <= __y0 / __n)
+	  const unsigned __w0 = __w / __n;  // __w0 <= __m
+
+	  __s0 = 0;
+	  __s1 = 0;
+	  if (__w0 < __cdig)
+	    {
+	      __s0 = __ctype(1) << __w0;
+	      __s1 = __s0 << 1;
+	    }
+
+	  __y0 = 0;
+	  __y1 = 0;
+	  if (__r)
+	    {
+	      __y0 = __s0 * (__r / __s0);
+	      if (__s1)
+		__y1 = __s1 * (__r / __s1);
+
+	      if (__r - __y0 <= __y0 / __n)
+		break;
+	    }
+	  else
 	    break;
 	}
 
       result_type __sum = 0;
       for (size_t __k = 0; __k < __n0; ++__k)
 	{
-	  result_type __u;
+	  __ctype __u;
 	  do
 	    __u = _M_b() - _M_b.min();
-	  while (__u >= __y0);
-	  __sum = __s0 * __sum + __u % __s0;
+	  while (__y0 && __u >= __y0);
+	  __sum = __s0 * __sum + (__s0 ? __u % __s0 : __u);
 	}
       for (size_t __k = __n0; __k < __n; ++__k)
 	{
-	  result_type __u;
+	  __ctype __u;
 	  do
 	    __u = _M_b() - _M_b.min();
-	  while (__u >= __y1);
-	  __sum = __s1 * __sum + __u % __s1;
+	  while (__y1 && __u >= __y1);
+	  __sum = __s1 * __sum + (__s1 ? __u % __s1 : __u);
 	}
       return __sum;
     }
@@ -836,12 +865,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       operator()(_UniformRandomNumberGenerator& __urng,
 		 const param_type& __param)
       {
-	typedef typename std::make_unsigned<typename
-	  _UniformRandomNumberGenerator::result_type>::type __urngtype;
+	typedef typename _UniformRandomNumberGenerator::result_type
+	  _Gresult_type;
 	typedef typename std::make_unsigned<result_type>::type __utype;
-	typedef typename std::conditional<(sizeof(__urngtype)
-					   > sizeof(__utype)),
-	  __urngtype, __utype>::type __uctype;
+	typedef typename std::common_type<_Gresult_type, __utype>::type
+	  __uctype;
 
 	const __uctype __urngmin = __urng.min();
 	const __uctype __urngmax = __urng.max();
@@ -876,7 +904,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	      high in [0, urange / (urngrange + 1)]
 
 	      and
-	
+
 	      low in [0, urngrange].
 	    */
 	    __uctype __tmp; // wraparound control
@@ -1075,7 +1103,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       return __is;
     }
 
-
+  // This is Leger's algorithm, also in Devroye, Ch. X, Example 1.5.
   template<typename _IntType>
     template<typename _UniformRandomNumberGenerator>
       typename negative_binomial_distribution<_IntType>::result_type
@@ -1098,7 +1126,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
 	typedef typename std::gamma_distribution<result_type>::param_type
 	  param_type;
-	
+
 	const double __y =
 	  _M_gd(__urng, param_type(__p.k(), (1.0 - __p.p()) / __p.p()));
 
@@ -2029,7 +2057,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	    do
 	      {
 		__n = _M_nd(__urng);
-		__v = result_type(1.0) + __param._M_a2 * __n; 
+		__v = result_type(1.0) + __param._M_a2 * __n;
 	      }
 	    while (__v <= 0.0);
 
@@ -2047,7 +2075,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	    do
 	      __u = __aurng();
 	    while (__u == 0.0);
-	    
+
 	    return (std::pow(__u, result_type(1.0) / __param.alpha())
 		    * __a1 * __v * __param.beta());
 	  }
@@ -2551,7 +2579,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       //  Now normalize the densities...
       __detail::__transform(_M_den.begin(), _M_den.end(), _M_den.begin(),
 			  std::bind2nd(std::divides<double>(), __sum));
-      //  ... and partial sums... 
+      //  ... and partial sums...
       __detail::__transform(_M_cp.begin(), _M_cp.end(), _M_cp.begin(),
 			    std::bind2nd(std::divides<double>(), __sum));
       //  ... and slopes.
@@ -2761,16 +2789,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		       : (__n - 1) / 2;
       const size_t __p = (__n - __t) / 2;
       const size_t __q = __p + __t;
-      const size_t __m = std::max(__s + 1, __n);
+      const size_t __m = std::max(size_t(__s + 1), __n);
 
       for (size_t __k = 0; __k < __m; ++__k)
 	{
 	  _Type __arg = (__begin[__k % __n]
 			 ^ __begin[(__k + __p) % __n]
 			 ^ __begin[(__k - 1) % __n]);
-	  _Type __r1 = __arg ^ (__arg << 27);
-	  __r1 = __detail::__mod<_Type, __detail::_Shift<_Type, 32>::__value,
-	                         1664525u, 0u>(__r1);
+	  _Type __r1 = __arg ^ (__arg >> 27);
+	  __r1 = __detail::__mod<_Type,
+		    __detail::_Shift<_Type, 32>::__value>(1664525u * __r1);
 	  _Type __r2 = __r1;
 	  if (__k == 0)
 	    __r2 += __s;
@@ -2790,14 +2818,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  _Type __arg = (__begin[__k % __n]
 			 + __begin[(__k + __p) % __n]
 			 + __begin[(__k - 1) % __n]);
-	  _Type __r3 = __arg ^ (__arg << 27);
-	  __r3 = __detail::__mod<_Type, __detail::_Shift<_Type, 32>::__value,
-	                         1566083941u, 0u>(__r3);
+	  _Type __r3 = __arg ^ (__arg >> 27);
+	  __r3 = __detail::__mod<_Type,
+		   __detail::_Shift<_Type, 32>::__value>(1566083941u * __r3);
 	  _Type __r4 = __r3 - __k % __n;
 	  __r4 = __detail::__mod<_Type,
 	           __detail::_Shift<_Type, 32>::__value>(__r4);
-	  __begin[(__k + __p) % __n] ^= __r4;
-	  __begin[(__k + __q) % __n] ^= __r3;
+	  __begin[(__k + __p) % __n] ^= __r3;
+	  __begin[(__k + __q) % __n] ^= __r4;
 	  __begin[__k % __n] = __r4;
 	}
     }
@@ -2810,9 +2838,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       const size_t __b
 	= std::min(static_cast<size_t>(std::numeric_limits<_RealType>::digits),
                    __bits);
-      const long double __r = static_cast<long double>(__urng.max())
-			    - static_cast<long double>(__urng.min()) + 1.0L;
-      const size_t __log2r = std::log(__r) / std::log(2.0L);
+      const float __r = static_cast< double>(__urng.max())
+			    - static_cast< double>(__urng.min()) + 1.0L;
+      const size_t __log2r = std::log(__r) / std::log(2.0);
       size_t __k = std::max<size_t>(1UL, (__b + __log2r - 1UL) / __log2r);
       _RealType __sum = _RealType(0);
       _RealType __tmp = _RealType(1);

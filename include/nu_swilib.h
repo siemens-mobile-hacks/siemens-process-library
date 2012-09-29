@@ -44,10 +44,10 @@ typedef unsigned int            UNSIGNED_INT;
 
 //Cтруктуры
 
-#define         NU_TASK_SIZE                    42 + 50
+#define         NU_TASK_SIZE                    42 + 8
 #define         NU_HISR_SIZE                    22 + 4
 #define         NU_MAILBOX_SIZE                 13 + 4
-#define         NU_QUEUE_SIZE                   18 + 50
+#define         NU_QUEUE_SIZE                   18 + 8
 #define         NU_PIPE_SIZE                    18 + 4
 #define         NU_SEMAPHORE_SIZE               10 + 4
 #define         NU_EVENT_GROUP_SIZE             9  + 4

@@ -3,6 +3,8 @@
 #define __MEMCTL_H__
 
 
+#include <swilib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

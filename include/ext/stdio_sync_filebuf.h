@@ -193,7 +193,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   template<>
     inline stdio_sync_filebuf<char>::int_type
     stdio_sync_filebuf<char>::syncgetc()
-    { return getc(_M_file); }
+    { return std::getc(_M_file); }
 
   template<>
     inline stdio_sync_filebuf<char>::int_type

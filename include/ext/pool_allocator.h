@@ -1,6 +1,7 @@
 // Allocators -*- C++ -*-
 
-// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
+// 2010, 2011
 // Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
@@ -80,27 +81,27 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       enum { _S_align = 8 };
       enum { _S_max_bytes = 128 };
       enum { _S_free_list_size = (size_t)_S_max_bytes / (size_t)_S_align };
-      
+
       union _Obj
       {
 	union _Obj* _M_free_list_link;
 	char        _M_client_data[1];    // The client sees this.
       };
-      
+
       static _Obj* volatile         _S_free_list[_S_free_list_size];
 
       // Chunk allocation state.
       static char*                  _S_start_free;
       static char*                  _S_end_free;
-      static size_t                 _S_heap_size;     
-      
+      static size_t                 _S_heap_size;
+
       size_t
       _M_round_up(size_t __bytes)
       { return ((__bytes + (size_t)_S_align - 1) & ~((size_t)_S_align - 1)); }
-      
+
       _GLIBCXX_CONST _Obj* volatile*
       _M_get_free_list(size_t __bytes) throw ();
-    
+
       __mutex&
       _M_get_mutex() throw ();
 
@@ -108,7 +109,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       // free list.
       void*
       _M_refill(size_t __n);
-      
+
       // Allocates a chunk for nobjs of size size.  nobjs may be reduced
       // if it is inconvenient to allocate the requested number.
       char*
@@ -139,46 +140,52 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         struct rebind
         { typedef __pool_alloc<_Tp1> other; };
 
-      __pool_alloc() throw() { }
+      __pool_alloc() _GLIBCXX_USE_NOEXCEPT { }
 
-      __pool_alloc(const __pool_alloc&) throw() { }
+      __pool_alloc(const __pool_alloc&) _GLIBCXX_USE_NOEXCEPT { }
 
       template<typename _Tp1>
-        __pool_alloc(const __pool_alloc<_Tp1>&) throw() { }
+        __pool_alloc(const __pool_alloc<_Tp1>&) _GLIBCXX_USE_NOEXCEPT { }
 
-      ~__pool_alloc() throw() { }
+      ~__pool_alloc() _GLIBCXX_USE_NOEXCEPT { }
 
       pointer
-      address(reference __x) const { return std::__addressof(__x); }
+      address(reference __x) const _GLIBCXX_NOEXCEPT
+      { return std::__addressof(__x); }
 
       const_pointer
-      address(const_reference __x) const { return std::__addressof(__x); }
+      address(const_reference __x) const _GLIBCXX_NOEXCEPT
+      { return std::__addressof(__x); }
 
       size_type
-      max_size() const throw() 
+      max_size() const _GLIBCXX_USE_NOEXCEPT
       { return size_t(-1) / sizeof(_Tp); }
 
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
+      template<typename _Up, typename... _Args>
+        void
+        construct(_Up* __p, _Args&&... __args)
+	{ ::new((void *)__p) _Up(std::forward<_Args>(__args)...); }
+
+      template<typename _Up>
+        void
+        destroy(_Up* __p) { __p->~_Up(); }
+#else
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // 402. wrong new expression in [some_] allocator::construct
-      void 
-      construct(pointer __p, const _Tp& __val) 
+      void
+      construct(pointer __p, const _Tp& __val)
       { ::new((void *)__p) _Tp(__val); }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-      template<typename... _Args>
-        void
-        construct(pointer __p, _Args&&... __args)
-	{ ::new((void *)__p) _Tp(std::forward<_Args>(__args)...); }
-#endif
-
-      void 
+      void
       destroy(pointer __p) { __p->~_Tp(); }
+#endif
 
       pointer
       allocate(size_type __n, const void* = 0);
 
       void
-      deallocate(pointer __p, size_type __n);      
+      deallocate(pointer __p, size_type __n);
     };
 
   template<typename _Tp>
@@ -210,19 +217,19 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  // to efficiently support threading found in basic_string.h.
 	  if (_S_force_new == 0)
 	    {
-	      if (std::getenv("GLIBCXX_FORCE_NEW"))
+	      /*if (std::getenv("GLIBCXX_FORCE_NEW"))
 		__atomic_add_dispatch(&_S_force_new, 1);
-	      else
+	      else*/
 		__atomic_add_dispatch(&_S_force_new, -1);
 	    }
 
-	  const size_t __bytes = __n * sizeof(_Tp);	      
+	  const size_t __bytes = __n * sizeof(_Tp);
 	  if (__bytes > size_t(_S_max_bytes) || _S_force_new > 0)
 	    __ret = static_cast<_Tp*>(::operator new(__bytes));
 	  else
 	    {
 	      _Obj* volatile* __free_list = _M_get_free_list(__bytes);
-	      
+
 	      __scoped_lock sentry(_M_get_mutex());
 	      _Obj* __restrict__ __result = *__free_list;
 	      if (__builtin_expect(__result == 0, 0))

@@ -16,22 +16,6 @@ extern "C" {
 #endif
 
 
-__inline
-void lcd_draw_pixel32(LCDLAYER *layer, int x, int y, uint32_t pixel)
-{
-    if(x < 0 || y < 0 || x >= layer->w || y >= layer->h) return;
-    switch(layer->depth)
-    {
-        case 4:
-            ((uint16_t*)layer->buf)[ y * layer->w + x ] = rgb32ToRgb16(pixel);
-            break;
-
-        case 5:
-            ((uint32_t*)layer->buf)[ y * layer->w + x ] = pixel;
-            break;
-    }
-}
-
 
 __inline
 void displayLayer(LCDLAYER *layer)
@@ -39,7 +23,7 @@ void displayLayer(LCDLAYER *layer)
     GBS_SendMessage(LCD_DISPQUEUE_CEPID, LCD_DISPLAY_LAYER, 0, (void *)layer);
 }
 
-
+void directRedrawGui();
 void lcd_draw_imghdr(LCDLAYER *layer, int x, int y, const IMGHDR *img);
 void lcd_draw_image(LCDLAYER *layer, int x, int y, const image_t *_img);
 void lcd_draw_eimg(LCDLAYER *layer, int x, int y, const EIMGHDR *eimg);

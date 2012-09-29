@@ -344,6 +344,57 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
 	return __beg;
       }
 
+#if defined _GLIBCXX_LONG_DOUBLE_COMPAT && defined __LONG_DOUBLE_128__
+  template<typename _CharT, typename _InIter>
+    _InIter
+    money_get<_CharT, _InIter>::
+    __do_get(iter_type __beg, iter_type __end, bool __intl, ios_base& __io,
+	     ios_base::iostate& __err, double& __units) const
+    {
+      string __str;
+      __beg = __intl ? _M_extract<true>(__beg, __end, __io, __err, __str)
+                     : _M_extract<false>(__beg, __end, __io, __err, __str);
+      std::__convert_to_v(__str.c_str(), __units, __err, _S_get_c_locale());
+      return __beg;
+    }
+#endif
+
+  template<typename _CharT, typename _InIter>
+    _InIter
+    money_get<_CharT, _InIter>::
+    do_get(iter_type __beg, iter_type __end, bool __intl, ios_base& __io,
+	   ios_base::iostate& __err, long double& __units) const
+    {
+      string __str;
+      __beg = __intl ? _M_extract<true>(__beg, __end, __io, __err, __str)
+	             : _M_extract<false>(__beg, __end, __io, __err, __str);
+      std::__convert_to_v(__str.c_str(), __units, __err, _S_get_c_locale());
+      return __beg;
+    }
+
+  template<typename _CharT, typename _InIter>
+    _InIter
+    money_get<_CharT, _InIter>::
+    do_get(iter_type __beg, iter_type __end, bool __intl, ios_base& __io,
+	   ios_base::iostate& __err, string_type& __digits) const
+    {
+      typedef typename string::size_type                  size_type;
+
+      const locale& __loc = __io._M_getloc();
+      const ctype<_CharT>& __ctype = use_facet<ctype<_CharT> >(__loc);
+
+      string __str;
+      __beg = __intl ? _M_extract<true>(__beg, __end, __io, __err, __str)
+	             : _M_extract<false>(__beg, __end, __io, __err, __str);
+      const size_type __len = __str.size();
+      if (__len)
+	{
+	  __digits.resize(__len);
+	  __ctype.widen(__str.data(), __str.data() + __len, &__digits[0]);
+	}
+      return __beg;
+    }
+
   template<typename _CharT, typename _OutIter>
     template<bool _Intl>
       _OutIter
@@ -542,7 +593,8 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
       const int __cs_size =
 	__gnu_cxx::__numeric_traits<long double>::__max_exponent10 + 3;
       char* __cs = static_cast<char*>(__builtin_alloca(__cs_size));
-      int __len = 0;
+      int __len = /*std::__convert_from_v(_S_get_c_locale(), __cs, 0, "%.*Lf",
+					0, __units)*/0;
 #endif
       string_type __digits(__len, char_type());
       __ctype.widen(__cs, __cs + __len, &__digits[0]);
@@ -1168,9 +1220,13 @@ _GLIBCXX_END_NAMESPACE_LDBL
   extern template class moneypunct<char, true>;
   extern template class moneypunct_byname<char, false>;
   extern template class moneypunct_byname<char, true>;
-
+  extern template class _GLIBCXX_NAMESPACE_LDBL money_get<char>;
+  extern template class _GLIBCXX_NAMESPACE_LDBL money_put<char>;
   extern template class __timepunct<char>;
-
+  extern template class time_put<char>;
+  extern template class time_put_byname<char>;
+  extern template class time_get<char>;
+  extern template class time_get_byname<char>;
   extern template class messages<char>;
   extern template class messages_byname<char>;
 
@@ -1182,21 +1238,53 @@ _GLIBCXX_END_NAMESPACE_LDBL
     const moneypunct<char, false>&
     use_facet<moneypunct<char, false> >(const locale&);
 
+  extern template
+    const money_put<char>&
+    use_facet<money_put<char> >(const locale&);
+
+  extern template
+    const money_get<char>&
+    use_facet<money_get<char> >(const locale&);
 
   extern template
     const __timepunct<char>&
     use_facet<__timepunct<char> >(const locale&);
 
+  extern template
+    const time_put<char>&
+    use_facet<time_put<char> >(const locale&);
+
+  extern template
+    const time_get<char>&
+    use_facet<time_get<char> >(const locale&);
 
   extern template
     const messages<char>&
     use_facet<messages<char> >(const locale&);
 
+  extern template
+    bool
+    has_facet<moneypunct<char> >(const locale&);
+
+  extern template
+    bool
+    has_facet<money_put<char> >(const locale&);
+
+  extern template
+    bool
+    has_facet<money_get<char> >(const locale&);
 
   extern template
     bool
     has_facet<__timepunct<char> >(const locale&);
 
+  extern template
+    bool
+    has_facet<time_put<char> >(const locale&);
+
+  extern template
+    bool
+    has_facet<time_get<char> >(const locale&);
 
   extern template
     bool

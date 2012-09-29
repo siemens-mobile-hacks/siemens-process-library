@@ -87,7 +87,17 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 				__s2.data(), __s2.data() + __s2.length()) < 0);
     }
 
-
+  /**
+   *  @brief  Test for the presence of a facet.
+   *
+   *  has_facet tests the locale argument for the presence of the facet type
+   *  provided as the template parameter.  Facets derived from the facet
+   *  parameter will also return true.
+   *
+   *  @tparam  _Facet  The facet type to test the presence of.
+   *  @param  __loc  The locale to test.
+   *  @return  true if @p __loc contains a facet of type _Facet, else false.
+  */
   template<typename _Facet>
     bool
     has_facet(const locale& __loc) throw()
@@ -102,6 +112,19 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #endif
     }
 
+  /**
+   *  @brief  Return a facet.
+   *
+   *  use_facet looks for and returns a reference to a facet of type Facet
+   *  where Facet is the template parameter.  If has_facet(locale) is true,
+   *  there is a suitable facet to return.  It throws std::bad_cast if the
+   *  locale doesn't contain a facet of type Facet.
+   *
+   *  @tparam  _Facet  The facet type to access.
+   *  @param  __loc  The locale to use.
+   *  @return  Reference to facet of type Facet.
+   *  @throw  std::bad_cast if @p __loc doesn't contain a facet of type _Facet.
+  */
   template<typename _Facet>
     const _Facet&
     use_facet(const locale& __loc)
@@ -121,13 +144,13 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // Generic version does nothing.
   template<typename _CharT>
     int
-    collate<_CharT>::_M_compare(const _CharT*, const _CharT*)
+    collate<_CharT>::_M_compare(const _CharT*, const _CharT*) const throw ()
     { return 0; }
 
   // Generic version does nothing.
   template<typename _CharT>
     size_t
-    collate<_CharT>::_M_transform(_CharT*, const _CharT*, size_t)
+    collate<_CharT>::_M_transform(_CharT*, const _CharT*, size_t) const throw ()
     { return 0; }
 
   template<typename _CharT>
@@ -151,7 +174,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       // to strcoll.
       for (;;)
 	{
-	  const int __res = 0;
+	  const int __res = _M_compare(__p, __q);
 	  if (__res)
 	    return __res;
 
@@ -194,7 +217,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  for (;;)
 	    {
 	      // First try a buffer perhaps big enough.
-	      size_t __res = 0;
+	      size_t __res = _M_transform(__c, __p, __len);
 	      // If the buffer was not large enough, try again with the
 	      // correct size.
 	      if (__res >= __len)
@@ -202,7 +225,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		  __len = __res + 1;
 		  delete [] __c, __c = 0;
 		  __c = new _CharT[__len];
-		  __res = 0;
+		  __res = _M_transform(__c, __p, __len);
 		}
 
 	      __ret.append(__c, __res);

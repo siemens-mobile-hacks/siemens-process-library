@@ -95,8 +95,8 @@ inline int putc(int c, FILE *stream) __THROW { return fputc(c,stream); }
 inline int putc_unlocked(int c, FILE *stream) __THROW { return fputc_unlocked(c,stream); }
 #endif
 
+int getc(FILE *);
 #if !defined(__cplusplus)
-#define getc(stream) fgetc(stream)
 #define getchar() fgetc(stdin)
 #define getc_unlocked(stream) fgetc_unlocked(stream)
 #define getchar_unlocked() fgetc_unlocked(stdin)
